@@ -8,48 +8,48 @@ import (
 	"net/http"
 )
 
-type HttpError struct {
+type httpError struct {
 	StatusCode int
 	Message    string
 }
 
-func (e *HttpError) Error() string {
+func (e *httpError) Error() string {
 	return fmt.Sprintf("[%d] %s", e.StatusCode, e.Message)
 }
 
-func NotFound(message string) *HttpError {
-	return &HttpError{
+func notFound(message string) *httpError {
+	return &httpError{
 		StatusCode: http.StatusNotFound,
 		Message:    message,
 	}
 }
 
-func BadRequest(message string) *HttpError {
-	return &HttpError{
+func badRequest(message string) *httpError {
+	return &httpError{
 		StatusCode: http.StatusBadRequest,
 		Message:    message,
 	}
 }
 
-func Unauthorized(message string) *HttpError {
-	return &HttpError{
+func unauthorized(message string) *httpError {
+	return &httpError{
 		StatusCode: http.StatusUnauthorized,
 		Message:    message,
 	}
 }
 
-func InternalServerError(message string) *HttpError {
-	return &HttpError{
+func internalServerError(message string) *httpError {
+	return &httpError{
 		StatusCode: http.StatusInternalServerError,
 		Message:    message,
 	}
 }
 
-func ToHandler(f func(http.ResponseWriter, *http.Request) error) http.HandlerFunc {
+func toHandler(f func(http.ResponseWriter, *http.Request) error) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := f(w, r)
 		if err != nil {
-			httpErr := &HttpError{}
+			httpErr := &httpError{}
 			if errors.As(err, &httpErr) {
 				http.Error(w, httpErr.Message, httpErr.StatusCode)
 			} else {
@@ -64,7 +64,7 @@ func body[T any](r *http.Request) (T, error) {
 
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "" && contentType != "application/json" {
-		return zero, &HttpError{
+		return zero, &httpError{
 			StatusCode: http.StatusUnsupportedMediaType,
 			Message:    "expected content-type application/json",
 		}
@@ -78,7 +78,7 @@ func body[T any](r *http.Request) (T, error) {
 	// 解码JSON
 	var result T
 	if err := json.NewDecoder(limitedReader).Decode(&result); err != nil {
-		return zero, &HttpError{
+		return zero, &httpError{
 			StatusCode: http.StatusBadRequest,
 			Message:    err.Error(),
 		}
@@ -87,11 +87,11 @@ func body[T any](r *http.Request) (T, error) {
 	return result, nil
 }
 
-func Respond[T any](w http.ResponseWriter, statusCode int, response T) error {
+func respond[T any](w http.ResponseWriter, statusCode int, response T) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		return InternalServerError("failed to encode response")
+		return internalServerError("failed to encode response")
 	}
 	return nil
 }

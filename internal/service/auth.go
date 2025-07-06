@@ -9,12 +9,12 @@ import (
 )
 
 func UseAuthService(mux *http.ServeMux, s AuthService, path string) {
-	mux.HandleFunc("POST "+path+"/register", ToHandler(s.Register))
-	mux.HandleFunc("POST "+path+"/login", ToHandler(s.Login))
-	mux.HandleFunc("POST "+path+"/refresh", ToHandler(s.Refresh))
-	mux.HandleFunc("POST "+path+"/email/verify/request", ToHandler(s.RequestEmailVerification))
-	mux.HandleFunc("POST "+path+"/password/reset", ToHandler(s.ResetPassword))
-	mux.HandleFunc("POST "+path+"/password/reset/request", ToHandler(s.RequestPasswordReset))
+	mux.HandleFunc("POST "+path+"/register", toHandler(s.Register))
+	mux.HandleFunc("POST "+path+"/login", toHandler(s.Login))
+	mux.HandleFunc("POST "+path+"/refresh", toHandler(s.Refresh))
+	mux.HandleFunc("POST "+path+"/email/verify/request", toHandler(s.RequestEmailVerification))
+	mux.HandleFunc("POST "+path+"/password/reset", toHandler(s.ResetPassword))
+	mux.HandleFunc("POST "+path+"/password/reset/request", toHandler(s.RequestPasswordReset))
 }
 
 type AuthService interface {
@@ -95,7 +95,7 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 
 	hashedPassword, err := util.GenerateHash(req.Password)
 	if err != nil {
-		return InternalServerError("failed to generate password hash")
+		return internalServerError("failed to generate password hash")
 	}
 
 	user := &repository.User{
@@ -109,15 +109,15 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 	}
 	err = s.userRepo.Save(user)
 	if err != nil {
-		return InternalServerError("failed to save user")
+		return internalServerError("failed to save user")
 	}
 
 	err = s.generateAndUseJwtToken(w, user)
 	if err != nil {
-		return InternalServerError("failed to generate JWT token")
+		return internalServerError("failed to generate JWT token")
 	}
 
-	return Respond(w, http.StatusCreated, respRegister{
+	return respond(w, http.StatusCreated, respRegister{
 		Username:  user.Username,
 		Role:      user.Role,
 		CreatedAt: user.CreatedAt,
@@ -148,17 +148,17 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 		user, err = s.userRepo.FindByUsername(req.Username)
 	}
 	if err != nil {
-		return NotFound("user not found")
+		return notFound("user not found")
 	}
 
 	v, err := util.ValidateHash(user.Password, req.Password)
 	if !v.Valid || err != nil {
-		return Unauthorized("invalid credentials")
+		return unauthorized("invalid credentials")
 	}
 
 	err = s.generateAndUseJwtToken(w, user)
 	if err != nil {
-		return InternalServerError("failed to generate JWT token")
+		return internalServerError("failed to generate JWT token")
 	}
 
 	if v.Obsolete {
@@ -172,7 +172,7 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 	}
 
-	return Respond(w, http.StatusOK, respLogin{
+	return respond(w, http.StatusOK, respLogin{
 		Username:  user.Username,
 		Role:      user.Role,
 		CreatedAt: user.CreatedAt,
