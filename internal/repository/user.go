@@ -1,0 +1,125 @@
+package repository
+
+import (
+	"auth/.gen/auth/public/model"
+	. "auth/.gen/auth/public/table"
+	"database/sql"
+	"time"
+
+	. "github.com/go-jet/jet/v2/postgres"
+)
+
+const (
+	RoleModerator string = "moderator"
+	RoleMember    string = "member"
+	RoleGuest     string = "guest"
+	RoleBanned    string = "banned"
+)
+
+type User = model.AuthUser
+
+type UserFilter struct {
+	Username      *string
+	Role          *string
+	CreatedAfter  *time.Time
+	CreatedBefore *time.Time
+}
+
+type UserRepository interface {
+	List(filter UserFilter, pageNumber int64, pageSize int64) ([]*User, error)
+	FindByUsername(username string) (*User, error)
+	FindByEmail(email string) (*User, error)
+	Save(user *User) error
+	UpdateLastLogin(user *User) error
+	UpdateHashedPassword(user *User) error
+}
+
+type userRepository struct {
+	db *sql.DB
+}
+
+func NewUserRepository(db *sql.DB) UserRepository {
+	return &userRepository{db: db}
+}
+
+func (r *userRepository) List(filter UserFilter, pageNumber int64, pageSize int64) ([]*User, error) {
+	stmt := SELECT(AuthUser.AllColumns).
+		FROM(AuthUser)
+
+	if filter.Username != nil {
+		stmt = stmt.WHERE(AuthUser.Username.LIKE(String(*filter.Username)))
+	}
+	if filter.Role != nil {
+		stmt = stmt.WHERE(AuthUser.Role.EQ(String(*filter.Role)))
+	}
+	if filter.CreatedAfter != nil {
+		stmt = stmt.WHERE(AuthUser.CreatedAt.GT(TimestampzT(*filter.CreatedAfter)))
+	}
+	if filter.CreatedBefore != nil {
+		stmt = stmt.WHERE(AuthUser.CreatedAt.LT(TimestampzT(*filter.CreatedBefore)))
+	}
+
+	stmt = stmt.
+		ORDER_BY(AuthUser.ID.ASC()).
+		LIMIT(pageSize).
+		OFFSET(pageNumber * pageSize)
+
+	var dest []*User
+	err := stmt.Query(r.db, &dest)
+	if err != nil {
+		return nil, err
+	}
+	return dest, nil
+}
+
+func (r *userRepository) FindByUsername(username string) (*User, error) {
+	stmt := SELECT(AuthUser.AllColumns).
+		FROM(AuthUser).
+		WHERE(AuthUser.Username.EQ(String(username)))
+
+	var dest User
+	err := stmt.Query(r.db, &dest)
+	if err != nil {
+		return nil, err
+	}
+	return &dest, nil
+}
+
+func (r *userRepository) FindByEmail(email string) (*User, error) {
+	stmt := SELECT(AuthUser.AllColumns).
+		FROM(AuthUser).
+		WHERE(AuthUser.Email.EQ(String(email)))
+
+	var dest User
+	err := stmt.Query(r.db, &dest)
+	if err != nil {
+		return nil, err
+	}
+	return &dest, nil
+}
+
+func (r *userRepository) Save(user *User) error {
+	stmt := AuthUser.INSERT(AuthUser.MutableColumns).
+		MODEL(user)
+
+	_, err := stmt.Exec(r.db)
+	return err
+}
+
+func (r *userRepository) UpdateLastLogin(user *User) error {
+	stmt := AuthUser.UPDATE(AuthUser.LastLogin).
+		SET(TimestampzT(time.Now())).
+		WHERE(AuthUser.ID.EQ(Int32(user.ID)))
+
+	_, err := stmt.Exec(r.db)
+	return err
+}
+
+func (r *userRepository) UpdateHashedPassword(user *User) error {
+	stmt := AuthUser.UPDATE(AuthUser.Password).
+		SET(String(user.Password)).
+		WHERE(AuthUser.ID.EQ(Int32(user.ID)))
+
+	_, err := stmt.Exec(r.db)
+	return err
+}
