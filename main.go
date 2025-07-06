@@ -19,15 +19,17 @@ func env(key, fallback string) string {
 func main() {
 	mux := http.NewServeMux()
 
-	db := infra.NewDatabase(
+	db := infra.NewSqlDb(
 		env("DB_HOST", "localhost"),
 		env("DB_USER", "auth"),
 		env("DB_PASSWORD", ""),
 		env("DB_NAME", "auth"),
 	)
+	rdb := infra.NewRedis()
 
 	userRepo := repository.NewUserRepository(db)
-	authService := service.NewAuthService(userRepo)
+	codeRepo := repository.NewCodeRepository(rdb)
+	authService := service.NewAuthService("jwt-secret-key", userRepo, codeRepo)
 	adminService := service.NewAdminService(userRepo)
 
 	const root = "/api/v1"

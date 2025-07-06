@@ -29,17 +29,22 @@ type AuthService interface {
 type authService struct {
 	jwtKey   string
 	userRepo repository.UserRepository
+	codeRepo repository.CodeRepository
 }
 
 func NewAuthService(
+	jwtKey string,
 	userRepo repository.UserRepository,
+	codeRepo repository.CodeRepository,
 ) AuthService {
 	s := &authService{
-		jwtKey:   "wtf",
+		jwtKey:   jwtKey,
 		userRepo: userRepo,
+		codeRepo: codeRepo,
 	}
 	return s
 }
+
 func (s *authService) generateAndUseJwtToken(w http.ResponseWriter, user *repository.User) error {
 	expired := time.Now().Add(time.Hour * 24 * 30)
 	token, err := util.GenerateJwt(s.jwtKey, user, expired)
