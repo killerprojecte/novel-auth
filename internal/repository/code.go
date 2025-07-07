@@ -1,16 +1,16 @@
 package repository
 
 import (
+	"fmt"
+	"math/rand"
 	"time"
 
 	"github.com/go-redis/redis"
 )
 
 type CodeRepository interface {
-	AddEmailVerifyCode(email, code string) error
-	CheckEmailVerifyCode(email, code string) (bool, error)
-	AddPasswordResetCode(email, code string) error
-	CheckPasswordResetCode(email, code string) (bool, error)
+	SetEmailVerifyCode(email string) (string, error)
+	CheckEmailVerifyCode(email, code string) bool
 }
 
 type codeRepository struct {
@@ -23,26 +23,21 @@ func NewCodeRepository(rdb *redis.Client) CodeRepository {
 	}
 }
 
-func (r *codeRepository) AddEmailVerifyCode(email, code string) error {
-	return r.rdb.Set("ec:"+email, code, time.Minute*15).Err()
+func createCode() string {
+	randomNum := rand.Intn(999999)
+	return fmt.Sprintf("%06d", randomNum)
 }
 
-func (r *codeRepository) CheckEmailVerifyCode(email, code string) (bool, error) {
+func (r *codeRepository) SetEmailVerifyCode(email string) (string, error) {
+	code := createCode()
+	err := r.rdb.Set("ec:"+email, code, time.Minute*15).Err()
+	return code, err
+}
+
+func (r *codeRepository) CheckEmailVerifyCode(email, code string) bool {
 	val, err := r.rdb.Get("ec:" + email).Result()
 	if err != nil {
-		return false, err
+		return false
 	}
-	return val != code, nil
-}
-
-func (r *codeRepository) AddPasswordResetCode(email, code string) error {
-	return r.rdb.Set("rp:"+email, code, 0).Err()
-}
-
-func (r *codeRepository) CheckPasswordResetCode(email, code string) (bool, error) {
-	val, err := r.rdb.Get("rp:" + email).Result()
-	if err != nil {
-		return false, err
-	}
-	return val != code, nil
+	return val != code
 }

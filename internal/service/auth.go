@@ -1,6 +1,7 @@
 package service
 
 import (
+	"auth/internal/infra"
 	"auth/internal/repository"
 	"auth/internal/util"
 	"net/http"
@@ -13,8 +14,6 @@ func UseAuthService(mux *http.ServeMux, s AuthService, path string) {
 	mux.HandleFunc("POST "+path+"/login", toHandler(s.Login))
 	mux.HandleFunc("POST "+path+"/refresh", toHandler(s.Refresh))
 	mux.HandleFunc("POST "+path+"/email/verify/request", toHandler(s.RequestEmailVerification))
-	mux.HandleFunc("POST "+path+"/password/reset", toHandler(s.ResetPassword))
-	mux.HandleFunc("POST "+path+"/password/reset/request", toHandler(s.RequestPasswordReset))
 }
 
 type AuthService interface {
@@ -22,25 +21,26 @@ type AuthService interface {
 	Login(http.ResponseWriter, *http.Request) error
 	Refresh(http.ResponseWriter, *http.Request) error
 	RequestEmailVerification(http.ResponseWriter, *http.Request) error
-	ResetPassword(http.ResponseWriter, *http.Request) error
-	RequestPasswordReset(http.ResponseWriter, *http.Request) error
 }
 
 type authService struct {
 	jwtKey   string
 	userRepo repository.UserRepository
 	codeRepo repository.CodeRepository
+	email    infra.EmailClient
 }
 
 func NewAuthService(
 	jwtKey string,
 	userRepo repository.UserRepository,
 	codeRepo repository.CodeRepository,
+	email infra.EmailClient,
 ) AuthService {
 	s := &authService{
 		jwtKey:   jwtKey,
 		userRepo: userRepo,
 		codeRepo: codeRepo,
+		email:    email,
 	}
 	return s
 }
@@ -55,9 +55,10 @@ func (s *authService) updateObsoletePassword(user *repository.User, newPassword 
 }
 
 type reqRegister struct {
-	Email    string `json:"email" validate:"required,email"`
-	Username string `json:"username" validate:"required,min=3,max=50"`
-	Password string `json:"password" validate:"required,min=8"`
+	Email      string `json:"email" validate:"required,email"`
+	Username   string `json:"username" validate:"required,min=3,max=50"`
+	Password   string `json:"password" validate:"required,min=8"`
+	VerifyCode string `json:"code" validate:"required"`
 }
 
 type respRegister struct {
@@ -70,6 +71,10 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 	req, err := body[reqRegister](r)
 	if err != nil {
 		return err
+	}
+
+	if !s.codeRepo.CheckEmailVerifyCode(req.Email, req.VerifyCode) {
+		return badRequest("invalid verification code")
 	}
 
 	hashedPassword, err := util.GenerateHash(req.Password)
@@ -149,15 +154,11 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if v.Obsolete {
-		err = s.updateObsoletePassword(user, req.Password)
-		if err != nil {
-		}
+		s.updateObsoletePassword(user, req.Password)
 	}
 
 	user.LastLogin = time.Now()
-	err = s.userRepo.UpdateLastLogin(user)
-	if err != nil {
-	}
+	s.userRepo.UpdateLastLogin(user)
 
 	return respond(w, http.StatusOK, respLogin{
 		Username:  user.Username,
@@ -190,33 +191,30 @@ func (s *authService) Refresh(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	user.LastLogin = time.Now()
-	err = s.userRepo.UpdateLastLogin(user)
-	if err != nil {
-	}
+	s.userRepo.UpdateLastLogin(user)
 
 	return nil
+}
+
+type reqEmailCode struct {
+	Email string `json:"email" validate:"required,email"`
 }
 
 func (s *authService) RequestEmailVerification(w http.ResponseWriter, r *http.Request) error {
-	// Implement email verification request logic here
-
-	return nil
-}
-
-func (s *authService) RequestPasswordReset(w http.ResponseWriter, r *http.Request) error {
-	return nil
-}
-
-type reqResetPassword struct {
-	OldPassword string `json:"old_password" validate:"required"`
-	NewPassword string `json:"new_password" validate:"required,min=8"`
-}
-
-func (s *authService) ResetPassword(w http.ResponseWriter, r *http.Request) error {
-	_, err := body[reqResetPassword](r)
+	req, err := body[reqEmailCode](r)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	code, err := s.codeRepo.SetEmailVerifyCode(req.Email)
+	if err != nil {
+		return internalServerError("failed to create verification code")
+	}
+
+	err = s.email.SendVerifyEmail(req.Email, code)
+	if err != nil {
+		return internalServerError("failed to send verification email")
+	}
+
+	return respond(w, http.StatusOK, "verification email sent")
 }
