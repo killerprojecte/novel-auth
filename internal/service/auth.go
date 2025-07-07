@@ -45,27 +45,6 @@ func NewAuthService(
 	return s
 }
 
-func (s *authService) generateAndUseJwtToken(w http.ResponseWriter, user *repository.User) error {
-	expired := time.Now().Add(time.Hour * 24 * 30)
-	token, err := util.GenerateJwt(s.jwtKey, user, expired)
-	if err != nil {
-		return err
-	}
-
-	cookie := &http.Cookie{
-		Name:     "auth",
-		Value:    token,
-		Domain:   ".novelia.cc",
-		Path:     "/",
-		MaxAge:   3600 * 24 * 30,
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteStrictMode,
-	}
-	http.SetCookie(w, cookie)
-	return nil
-}
-
 func (s *authService) updateObsoletePassword(user *repository.User, newPassword string) error {
 	hashedPassword, err := util.GenerateHash(newPassword)
 	if err != nil {
@@ -112,7 +91,11 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 		return internalServerError("failed to save user")
 	}
 
-	err = s.generateAndUseJwtToken(w, user)
+	err = generateJwtToken(s.jwtKey, w, &userClaims{
+		Username:  user.Username,
+		Role:      user.Role,
+		CreatedAt: user.CreatedAt,
+	})
 	if err != nil {
 		return internalServerError("failed to generate JWT token")
 	}
@@ -156,7 +139,11 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 		return unauthorized("invalid credentials")
 	}
 
-	err = s.generateAndUseJwtToken(w, user)
+	err = generateJwtToken(s.jwtKey, w, &userClaims{
+		Username:  user.Username,
+		Role:      user.Role,
+		CreatedAt: user.CreatedAt,
+	})
 	if err != nil {
 		return internalServerError("failed to generate JWT token")
 	}
@@ -180,7 +167,32 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *authService) Refresh(w http.ResponseWriter, r *http.Request) error {
-	// Implement refresh logic here
+	claims, err := authenticate(s.jwtKey, r)
+	if err != nil {
+		return err
+	}
+
+	user, err := s.userRepo.FindByUsername(claims.Username)
+	if err != nil {
+		return err
+	}
+	if user == nil {
+		return notFound("user not found")
+	}
+
+	err = generateJwtToken(s.jwtKey, w, &userClaims{
+		Username:  user.Username,
+		Role:      user.Role,
+		CreatedAt: user.CreatedAt,
+	})
+	if err != nil {
+		return err
+	}
+
+	user.LastLogin = time.Now()
+	err = s.userRepo.UpdateLastLogin(user)
+	if err != nil {
+	}
 
 	return nil
 }
