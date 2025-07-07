@@ -1,11 +1,12 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"time"
 
-	"github.com/go-redis/redis"
+	"github.com/redis/go-redis/v9"
 )
 
 type CodeRepository interface {
@@ -28,14 +29,16 @@ func createCode() string {
 	return fmt.Sprintf("%06d", randomNum)
 }
 
+var ctx = context.Background()
+
 func (r *codeRepository) SetEmailVerifyCode(email string) (string, error) {
 	code := createCode()
-	err := r.rdb.Set("ec:"+email, code, time.Minute*15).Err()
+	err := r.rdb.Set(ctx, "ec:"+email, code, time.Minute*15).Err()
 	return code, err
 }
 
 func (r *codeRepository) CheckEmailVerifyCode(email, code string) bool {
-	val, err := r.rdb.Get("ec:" + email).Result()
+	val, err := r.rdb.Get(ctx, "ec:"+email).Result()
 	if err != nil {
 		return false
 	}

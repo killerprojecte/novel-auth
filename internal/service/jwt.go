@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/golang-jwt/jwt"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 type userClaims struct {
@@ -14,9 +14,9 @@ type userClaims struct {
 }
 
 type userClaimsRaw struct {
-	jwt.StandardClaims
-	Role      string `json:"role"`
-	CreatedAt int64  `json:"crat"`
+	jwt.RegisteredClaims
+	Role      string           `json:"role"`
+	CreatedAt *jwt.NumericDate `json:"crat"`
 }
 
 func generateJwtToken(jwtKey string, w http.ResponseWriter, user *userClaims) error {
@@ -24,13 +24,13 @@ func generateJwtToken(jwtKey string, w http.ResponseWriter, user *userClaims) er
 	expiredAt := issuedAt.Add(time.Hour * 24 * 30)
 
 	claims := &userClaimsRaw{
-		StandardClaims: jwt.StandardClaims{
+		RegisteredClaims: jwt.RegisteredClaims{
 			Subject:   user.Username,
-			ExpiresAt: expiredAt.Unix(),
-			IssuedAt:  issuedAt.Unix(),
+			ExpiresAt: jwt.NewNumericDate(expiredAt),
+			IssuedAt:  jwt.NewNumericDate(issuedAt),
 		},
 		Role:      user.Role,
-		CreatedAt: user.CreatedAt.Unix(),
+		CreatedAt: jwt.NewNumericDate(user.CreatedAt),
 	}
 
 	token, err := jwt.
@@ -79,6 +79,6 @@ func authenticate(jwtKey string, r *http.Request) (userClaims, error) {
 	return userClaims{
 		Username:  claims.Subject,
 		Role:      claims.Role,
-		CreatedAt: time.Unix(claims.CreatedAt, 0),
+		CreatedAt: claims.CreatedAt.Time,
 	}, nil
 }

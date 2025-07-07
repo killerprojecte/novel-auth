@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS auth_user (
     attr jsonb not null default '{}'::jsonb
 );
 CREATE TABLE IF NOT EXISTS auth_event (
-    id integer generated always as identity primary key,
+    id bigint generated always as identity primary key,
+    user_id bigint not null,
     action varchar(128) not null,
     app varchar(128) not null,
     detail jsonb not null default '{}'::jsonb,
