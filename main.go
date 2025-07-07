@@ -26,10 +26,15 @@ func main() {
 		env("DB_NAME", "auth"),
 	)
 	rdb := infra.NewRedis()
+	email := infra.NewEmailClient(
+		env("MAILGUN_DOMAIN", "smtp.example.com"),
+		env("MAILGUN_APIKEY", ""),
+	)
 
 	userRepo := repository.NewUserRepository(db)
+	eventRepo := repository.NewEventRepository(db)
 	codeRepo := repository.NewCodeRepository(rdb)
-	authService := service.NewAuthService("jwt-secret-key", userRepo, codeRepo)
+	authService := service.NewAuthService("jwt-secret-key", userRepo, codeRepo, email)
 	adminService := service.NewAdminService(userRepo)
 
 	const root = "/api/v1"

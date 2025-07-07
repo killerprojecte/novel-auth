@@ -26,7 +26,7 @@ type UserFilter struct {
 }
 
 type UserRepository interface {
-	List(filter UserFilter, pageNumber int64, pageSize int64) ([]*User, error)
+	List(filter UserFilter, pageNumber, pageSize int64) ([]*User, error)
 	FindByUsername(username string) (*User, error)
 	FindByEmail(email string) (*User, error)
 	Save(user *User) error
