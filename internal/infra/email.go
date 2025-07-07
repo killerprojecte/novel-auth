@@ -10,7 +10,6 @@ import (
 
 type EmailClient interface {
 	SendVerifyEmail(email string, code string) error
-	SendResetPasswordEmail(email string, code string) error
 }
 
 type emailClient struct {
@@ -37,22 +36,6 @@ func (c *emailClient) SendVerifyEmail(email string, code string) error {
 		fmt.Sprintf(
 			"您的注册激活码为 %s\n"+
 				"激活码将会在15分钟后失效,请尽快完成注册\n"+
-				"这是系统邮件，请勿回复",
-			code,
-		),
-	)
-}
-
-func (c *emailClient) SendResetPasswordEmail(email string, code string) error {
-	return c.sendEmail(
-		email,
-		fmt.Sprintf(
-			"%s 轻小说机翻机器人 重置密码口令",
-			code,
-		),
-		fmt.Sprintf(
-			"您的重置密码口令为 %s\n"+
-				"口令将会在15分钟后失效,请尽快重置密码\n"+
 				"这是系统邮件，请勿回复",
 			code,
 		),
