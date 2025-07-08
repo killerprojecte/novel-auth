@@ -7,25 +7,25 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-func NewSqlDb(
-	host, user, password, dbname string,
-) *sql.DB {
-	connectString := fmt.Sprintf(
-		"host=%s port=5432 user=%s password=%s dbname=%s sslmode=disable",
-		host, user, password, dbname,
+func NewSqlDb(host string, port int, user, password, dbname string) *sql.DB {
+	db, err := sql.Open(
+		"postgres",
+		fmt.Sprintf(
+			"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+			host, port, user, password, dbname,
+		),
 	)
-
-	db, err := sql.Open("postgres", connectString)
 	if err != nil {
 		panic(err)
 	}
 	return db
 }
 
-func NewRedis() *redis.Client {
+func NewRedis(host string, port int, user, password string) *redis.Client {
 	return redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "",
+		Addr:     fmt.Sprintf("%s:%d", host, port),
+		Username: user,
+		Password: password,
 		DB:       0,
 	})
 }

@@ -16,11 +16,21 @@ type AdminService interface {
 }
 
 type adminService struct {
-	userRepo repository.UserRepository
+	jwtKey    string
+	userRepo  repository.UserRepository
+	eventRepo repository.EventRepository
 }
 
-func NewAdminService(userRepo repository.UserRepository) AdminService {
-	s := &adminService{userRepo: userRepo}
+func NewAdminService(
+	jwtKey string,
+	userRepo repository.UserRepository,
+	eventRepo repository.EventRepository,
+) AdminService {
+	s := &adminService{
+		jwtKey:    jwtKey,
+		userRepo:  userRepo,
+		eventRepo: eventRepo,
+	}
 	return s
 }
 
