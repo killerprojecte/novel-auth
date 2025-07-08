@@ -9,11 +9,17 @@ import (
 	. "github.com/go-jet/jet/v2/postgres"
 )
 
+const (
+	EventLogin    string = "login"
+	EventRegister string = "register"
+	EventEmail    string = "email"
+)
+
 type Event = model.AuthEvent
 
 type EventFilter struct {
+	UserID        *int64
 	Action        *string
-	App           *string
 	CreatedAfter  *time.Time
 	CreatedBefore *time.Time
 }
@@ -37,11 +43,11 @@ func (r *eventRepository) List(filter EventFilter, pageNumber, pageSize int64) (
 	stmt := SELECT(AuthEvent.AllColumns).
 		FROM(AuthEvent)
 
+	if filter.UserID != nil {
+		stmt = stmt.WHERE(AuthEvent.UserID.EQ(Int64(*filter.UserID)))
+	}
 	if filter.Action != nil {
 		stmt = stmt.WHERE(AuthEvent.Action.EQ(String(*filter.Action)))
-	}
-	if filter.App != nil {
-		stmt = stmt.WHERE(AuthEvent.App.EQ(String(*filter.App)))
 	}
 	if filter.CreatedAfter != nil {
 		stmt = stmt.WHERE(AuthEvent.CreatedAt.GT(TimestampzT(*filter.CreatedAfter)))

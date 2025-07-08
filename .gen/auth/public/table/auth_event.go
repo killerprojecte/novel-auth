@@ -18,8 +18,8 @@ type authEventTable struct {
 
 	// Columns
 	ID        postgres.ColumnInteger
+	UserID    postgres.ColumnInteger
 	Action    postgres.ColumnString
-	App       postgres.ColumnString
 	Detail    postgres.ColumnString
 	CreatedAt postgres.ColumnTimestampz
 
@@ -64,13 +64,13 @@ func newAuthEventTable(schemaName, tableName, alias string) *AuthEventTable {
 func newAuthEventTableImpl(schemaName, tableName, alias string) authEventTable {
 	var (
 		IDColumn        = postgres.IntegerColumn("id")
+		UserIDColumn    = postgres.IntegerColumn("user_id")
 		ActionColumn    = postgres.StringColumn("action")
-		AppColumn       = postgres.StringColumn("app")
 		DetailColumn    = postgres.StringColumn("detail")
 		CreatedAtColumn = postgres.TimestampzColumn("created_at")
-		allColumns      = postgres.ColumnList{IDColumn, ActionColumn, AppColumn, DetailColumn, CreatedAtColumn}
-		mutableColumns  = postgres.ColumnList{ActionColumn, AppColumn, DetailColumn, CreatedAtColumn}
-		defaultColumns  = postgres.ColumnList{CreatedAtColumn}
+		allColumns      = postgres.ColumnList{IDColumn, UserIDColumn, ActionColumn, DetailColumn, CreatedAtColumn}
+		mutableColumns  = postgres.ColumnList{UserIDColumn, ActionColumn, DetailColumn, CreatedAtColumn}
+		defaultColumns  = postgres.ColumnList{DetailColumn, CreatedAtColumn}
 	)
 
 	return authEventTable{
@@ -78,8 +78,8 @@ func newAuthEventTableImpl(schemaName, tableName, alias string) authEventTable {
 
 		//Columns
 		ID:        IDColumn,
+		UserID:    UserIDColumn,
 		Action:    ActionColumn,
-		App:       AppColumn,
 		Detail:    DetailColumn,
 		CreatedAt: CreatedAtColumn,
 

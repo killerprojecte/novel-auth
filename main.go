@@ -34,7 +34,14 @@ func main() {
 	userRepo := repository.NewUserRepository(db)
 	eventRepo := repository.NewEventRepository(db)
 	codeRepo := repository.NewCodeRepository(rdb)
-	authService := service.NewAuthService("jwt-secret-key", userRepo, codeRepo, email)
+
+	authService := service.NewAuthService(
+		"jwt-secret-key",
+		userRepo,
+		eventRepo,
+		codeRepo,
+		email,
+	)
 	adminService := service.NewAdminService(userRepo)
 
 	const root = "/api/v1"

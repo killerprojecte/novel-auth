@@ -24,23 +24,26 @@ type AuthService interface {
 }
 
 type authService struct {
-	jwtKey   string
-	userRepo repository.UserRepository
-	codeRepo repository.CodeRepository
-	email    infra.EmailClient
+	jwtKey    string
+	userRepo  repository.UserRepository
+	eventRepo repository.EventRepository
+	codeRepo  repository.CodeRepository
+	email     infra.EmailClient
 }
 
 func NewAuthService(
 	jwtKey string,
 	userRepo repository.UserRepository,
+	eventRepo repository.EventRepository,
 	codeRepo repository.CodeRepository,
 	email infra.EmailClient,
 ) AuthService {
 	s := &authService{
-		jwtKey:   jwtKey,
-		userRepo: userRepo,
-		codeRepo: codeRepo,
-		email:    email,
+		jwtKey:    jwtKey,
+		userRepo:  userRepo,
+		eventRepo: eventRepo,
+		codeRepo:  codeRepo,
+		email:     email,
 	}
 	return s
 }
@@ -105,6 +108,13 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 		return internalServerError("failed to generate JWT token")
 	}
 
+	s.eventRepo.Save(&repository.Event{
+		UserID:    &user.ID,
+		Action:    repository.EventRegister,
+		Detail:    "{}",
+		CreatedAt: time.Now(),
+	})
+
 	return respond(w, http.StatusCreated, respRegister{
 		Username:  user.Username,
 		Role:      user.Role,
@@ -159,6 +169,13 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 
 	user.LastLogin = time.Now()
 	s.userRepo.UpdateLastLogin(user)
+
+	s.eventRepo.Save(&repository.Event{
+		UserID:    &user.ID,
+		Action:    repository.EventLogin,
+		Detail:    "{}",
+		CreatedAt: time.Now(),
+	})
 
 	return respond(w, http.StatusOK, respLogin{
 		Username:  user.Username,
@@ -215,6 +232,13 @@ func (s *authService) RequestEmailVerification(w http.ResponseWriter, r *http.Re
 	if err != nil {
 		return internalServerError("failed to send verification email")
 	}
+
+	s.eventRepo.Save(&repository.Event{
+		UserID:    nil,
+		Action:    repository.EventEmail,
+		Detail:    "{}",
+		CreatedAt: time.Now(),
+	})
 
 	return respond(w, http.StatusOK, "verification email sent")
 }

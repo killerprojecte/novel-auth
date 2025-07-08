@@ -12,7 +12,7 @@ import (
 )
 
 type AuthUser struct {
-	ID        int32 `sql:"primary_key"`
+	ID        int64 `sql:"primary_key"`
 	Username  string
 	Email     string
 	Role      string

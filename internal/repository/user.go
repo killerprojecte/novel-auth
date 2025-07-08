@@ -109,7 +109,7 @@ func (r *userRepository) Save(user *User) error {
 func (r *userRepository) UpdateLastLogin(user *User) error {
 	stmt := AuthUser.UPDATE(AuthUser.LastLogin).
 		SET(TimestampzT(time.Now())).
-		WHERE(AuthUser.ID.EQ(Int32(user.ID)))
+		WHERE(AuthUser.ID.EQ(Int(user.ID)))
 
 	_, err := stmt.Exec(r.db)
 	return err
@@ -118,7 +118,7 @@ func (r *userRepository) UpdateLastLogin(user *User) error {
 func (r *userRepository) UpdateHashedPassword(user *User) error {
 	stmt := AuthUser.UPDATE(AuthUser.Password).
 		SET(String(user.Password)).
-		WHERE(AuthUser.ID.EQ(Int32(user.ID)))
+		WHERE(AuthUser.ID.EQ(Int(user.ID)))
 
 	_, err := stmt.Exec(r.db)
 	return err
