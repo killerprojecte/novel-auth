@@ -61,13 +61,13 @@ type reqRegister struct {
 	Email      string `json:"email" validate:"required,email"`
 	Username   string `json:"username" validate:"required,min=3,max=50"`
 	Password   string `json:"password" validate:"required,min=8"`
-	VerifyCode string `json:"code" validate:"required"`
+	VerifyCode string `json:"code" validate:"required,len=6"`
 }
 
 type respRegister struct {
-	Username  string    `json:"username" validate:"required,min=3,max=50"`
-	Role      string    `json:"role" validate:"required"`
-	CreatedAt time.Time `json:"created_at" validate:"required"`
+	Username  string    `json:"username"`
+	Role      string    `json:"role"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {

@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/go-playground/validator/v10"
 )
 
 type httpError struct {
@@ -78,10 +80,14 @@ func body[T any](r *http.Request) (T, error) {
 	// 解码JSON
 	var result T
 	if err := json.NewDecoder(limitedReader).Decode(&result); err != nil {
-		return zero, &httpError{
-			StatusCode: http.StatusBadRequest,
-			Message:    err.Error(),
-		}
+		return zero, badRequest("invalid JSON format")
+	}
+
+	// 验证JSON
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	if err := validate.Struct(result); err != nil {
+		errors := err.(validator.ValidationErrors)
+		return zero, badRequest(fmt.Sprintf("invalid request: %s", errors))
 	}
 
 	return result, nil
