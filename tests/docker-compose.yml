@@ -1,6 +1,12 @@
 services:
   auth:
-    image: auth:latest
+    build:
+      context: ../
+      dockerfile: Dockerfile
+      no_cache: true
+    depends_on:
+      - postgresql
+      - redis
     restart: unless-stopped
     environment:
       - DB_HOST=postgresql
@@ -23,8 +29,7 @@ services:
       - POSTGRES_USER=auth
       - POSTGRES_DB=auth
     volumes:
-      - ./data/postgresql:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ../sql/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       interval: 30s

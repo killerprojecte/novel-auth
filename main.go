@@ -69,7 +69,13 @@ func main() {
 	const root = "/api/v1"
 	service.UseAuthService(mux, authService, root+"/auth")
 	service.UseAdminService(mux, adminService, root+"/admin")
+	mux.HandleFunc("GET /health",
+		func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusOK)
+			w.Write([]byte("OK"))
+		},
+	)
 
-	log.Print("Listening... http://localhost:8080")
-	http.ListenAndServe(":8080", mux)
+	log.Print("Listening... http://localhost:3000")
+	http.ListenAndServe(":3000", mux)
 }

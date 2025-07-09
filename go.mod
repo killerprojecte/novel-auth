@@ -18,6 +18,7 @@ require (
 	github.com/go-playground/validator/v10 v10.27.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
+	github.com/lib/pq v1.10.9 // indirect
 	github.com/onsi/ginkgo v1.16.5 // indirect
 	github.com/onsi/gomega v1.37.0 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
