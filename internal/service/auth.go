@@ -45,10 +45,10 @@ func NewAuthService(
 }
 
 func (s *authService) Use(router chi.Router) {
-	router.Post("/register", toHandler(s.Register))
-	router.Post("/login", toHandler(s.Login))
-	router.Post("/refresh", toHandler(s.Refresh))
-	router.Post("/email/verify/request", toHandler(s.RequestEmailVerification))
+	router.Post("/register", util.E(s.Register))
+	router.Post("/login", util.E(s.Login))
+	router.Post("/refresh", util.E(s.Refresh))
+	router.Post("/email/verify/request", util.E(s.RequestEmailVerification))
 }
 
 func (s *authService) updateObsoletePassword(user *repository.User, newPassword string) error {
@@ -74,18 +74,18 @@ type respRegister struct {
 }
 
 func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
-	req, err := body[reqRegister](r)
+	req, err := util.Body[reqRegister](r)
 	if err != nil {
 		return err
 	}
 
 	if !s.codeRepo.CheckEmailVerifyCode(req.Email, req.VerifyCode) {
-		return badRequest("invalid verification code")
+		return util.BadRequest("invalid verification code")
 	}
 
 	hashedPassword, err := util.GenerateHash(req.Password)
 	if err != nil {
-		return internalServerError("failed to generate password hash")
+		return util.InternalServerError("failed to generate password hash")
 	}
 
 	user := &repository.User{
@@ -99,7 +99,7 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 	}
 	err = s.userRepo.Save(user)
 	if err != nil {
-		return internalServerError("failed to save user")
+		return util.InternalServerError("failed to save user")
 	}
 
 	err = generateJwtToken(s.jwtKey, w, &userClaims{
@@ -108,7 +108,7 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 		CreatedAt: user.CreatedAt,
 	})
 	if err != nil {
-		return internalServerError("failed to generate JWT token")
+		return util.InternalServerError("failed to generate JWT token")
 	}
 
 	s.eventRepo.Save(&repository.Event{
@@ -118,7 +118,7 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 		CreatedAt: time.Now(),
 	})
 
-	return respond(w, http.StatusCreated, respRegister{
+	return util.RespondJson(w, respRegister{
 		Username:  user.Username,
 		Role:      user.Role,
 		CreatedAt: user.CreatedAt,
@@ -137,7 +137,7 @@ type respLogin struct {
 }
 
 func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
-	req, err := body[reqLogin](r)
+	req, err := util.Body[reqLogin](r)
 	if err != nil {
 		return err
 	}
@@ -149,12 +149,12 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 		user, err = s.userRepo.FindByUsername(req.Username)
 	}
 	if err != nil {
-		return notFound("user not found")
+		return util.NotFound("user not found")
 	}
 
 	v, err := util.ValidateHash(user.Password, req.Password)
 	if !v.Valid || err != nil {
-		return unauthorized("invalid credentials")
+		return util.Unauthorized("invalid credentials")
 	}
 
 	err = generateJwtToken(s.jwtKey, w, &userClaims{
@@ -163,7 +163,7 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 		CreatedAt: user.CreatedAt,
 	})
 	if err != nil {
-		return internalServerError("failed to generate JWT token")
+		return util.InternalServerError("failed to generate JWT token")
 	}
 
 	if v.Obsolete {
@@ -180,7 +180,7 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 		CreatedAt: time.Now(),
 	})
 
-	return respond(w, http.StatusOK, respLogin{
+	return util.RespondJson(w, respLogin{
 		Username:  user.Username,
 		Role:      user.Role,
 		CreatedAt: user.CreatedAt,
@@ -198,7 +198,7 @@ func (s *authService) Refresh(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	if user == nil {
-		return notFound("user not found")
+		return util.NotFound("user not found")
 	}
 
 	err = generateJwtToken(s.jwtKey, w, &userClaims{
@@ -221,19 +221,19 @@ type reqEmailCode struct {
 }
 
 func (s *authService) RequestEmailVerification(w http.ResponseWriter, r *http.Request) error {
-	req, err := body[reqEmailCode](r)
+	req, err := util.Body[reqEmailCode](r)
 	if err != nil {
 		return err
 	}
 
 	code, err := s.codeRepo.SetEmailVerifyCode(req.Email)
 	if err != nil {
-		return internalServerError("failed to create verification code")
+		return util.InternalServerError("failed to create verification code")
 	}
 
 	err = s.email.SendVerifyEmail(req.Email, code)
 	if err != nil {
-		return internalServerError("failed to send verification email")
+		return util.InternalServerError("failed to send verification email")
 	}
 
 	s.eventRepo.Save(&repository.Event{
@@ -243,5 +243,5 @@ func (s *authService) RequestEmailVerification(w http.ResponseWriter, r *http.Re
 		CreatedAt: time.Now(),
 	})
 
-	return respond(w, http.StatusOK, "verification email sent")
+	return util.RespondJson(w, "verification email sent")
 }

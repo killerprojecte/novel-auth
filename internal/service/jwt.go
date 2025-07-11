@@ -1,6 +1,7 @@
 package service
 
 import (
+	"auth/internal/util"
 	"net/http"
 	"time"
 
@@ -59,7 +60,7 @@ func authenticate(jwtKey string, r *http.Request) (userClaims, error) {
 
 	cookie, err := r.Cookie("auth")
 	if err != nil {
-		return zero, unauthorized("missing authentication token")
+		return zero, util.Unauthorized("missing authentication token")
 	}
 
 	token, err := jwt.ParseWithClaims(cookie.Value, &userClaimsRaw{},
@@ -68,12 +69,12 @@ func authenticate(jwtKey string, r *http.Request) (userClaims, error) {
 		},
 	)
 	if err != nil || !token.Valid {
-		return zero, unauthorized("invalid authentication token")
+		return zero, util.Unauthorized("invalid authentication token")
 	}
 
 	claims, ok := token.Claims.(*userClaimsRaw)
 	if !ok {
-		return zero, unauthorized("invalid authentication token")
+		return zero, util.Unauthorized("invalid authentication token")
 	}
 
 	return userClaims{

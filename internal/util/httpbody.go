@@ -1,8 +1,7 @@
-package service
+package util
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -11,65 +10,12 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type httpError struct {
-	StatusCode int
-	Message    string
-}
-
-func (e *httpError) Error() string {
-	return fmt.Sprintf("[%d] %s", e.StatusCode, e.Message)
-}
-
-func notFound(message string) *httpError {
-	return &httpError{
-		StatusCode: http.StatusNotFound,
-		Message:    message,
-	}
-}
-
-func badRequest(message string) *httpError {
-	return &httpError{
-		StatusCode: http.StatusBadRequest,
-		Message:    message,
-	}
-}
-
-func unauthorized(message string) *httpError {
-	return &httpError{
-		StatusCode: http.StatusUnauthorized,
-		Message:    message,
-	}
-}
-
-func internalServerError(message string) *httpError {
-	return &httpError{
-		StatusCode: http.StatusInternalServerError,
-		Message:    message,
-	}
-}
-
-func toHandler(f func(http.ResponseWriter, *http.Request) error) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		err := f(w, r)
-		if err != nil {
-			httpErr := &httpError{}
-			if errors.As(err, &httpErr) {
-				w.WriteHeader(httpErr.StatusCode)
-				fmt.Fprint(w, httpErr.Message)
-			} else {
-				w.WriteHeader(http.StatusInternalServerError)
-				fmt.Fprint(w, err.Error())
-			}
-		}
-	}
-}
-
-func body[T any](r *http.Request) (T, error) {
+func Body[T any](r *http.Request) (T, error) {
 	var zero T
 
 	contentType := r.Header.Get("Content-Type")
 	if contentType != "" && contentType != "application/json" {
-		return zero, &httpError{
+		return zero, &HttpError{
 			StatusCode: http.StatusUnsupportedMediaType,
 			Message:    "expected content-type application/json",
 		}
@@ -83,7 +29,7 @@ func body[T any](r *http.Request) (T, error) {
 	// 解码JSON
 	var result T
 	if err := json.NewDecoder(limitedReader).Decode(&result); err != nil {
-		return zero, badRequest("invalid JSON format")
+		return zero, BadRequest("invalid JSON format")
 	}
 
 	// 验证JSON
@@ -127,17 +73,8 @@ func body[T any](r *http.Request) (T, error) {
 		for i, ve := range errors {
 			messages[i] = validationErrorToMessage(ve)
 		}
-		return zero, badRequest(strings.Join(messages, "\n"))
+		return zero, BadRequest(strings.Join(messages, "\n"))
 	}
 
 	return result, nil
-}
-
-func respond[T any](w http.ResponseWriter, statusCode int, response T) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(statusCode)
-	if err := json.NewEncoder(w).Encode(response); err != nil {
-		return internalServerError("failed to encode response")
-	}
-	return nil
 }
