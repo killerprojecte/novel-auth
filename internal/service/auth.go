@@ -59,9 +59,9 @@ func (s *authService) updateObsoletePassword(user *repository.User, newPassword 
 
 type reqRegister struct {
 	Email      string `json:"email" validate:"required,email"`
-	Username   string `json:"username" validate:"required,min=3,max=50"`
-	Password   string `json:"password" validate:"required,min=8"`
-	VerifyCode string `json:"code" validate:"required,len=6"`
+	Username   string `json:"username" validate:"required,min=2,max=50"`
+	Password   string `json:"password" validate:"required,min=8,max=100"`
+	VerifyCode string `json:"verify_code" validate:"required,numeric,len=6"`
 }
 
 type respRegister struct {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"strings"
 
 	"github.com/go-playground/validator/v10"
 )
@@ -53,9 +54,11 @@ func toHandler(f func(http.ResponseWriter, *http.Request) error) http.HandlerFun
 		if err != nil {
 			httpErr := &httpError{}
 			if errors.As(err, &httpErr) {
-				http.Error(w, httpErr.Message, httpErr.StatusCode)
+				w.WriteHeader(httpErr.StatusCode)
+				fmt.Fprint(w, httpErr.Message)
 			} else {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
+				w.WriteHeader(http.StatusInternalServerError)
+				fmt.Fprint(w, err.Error())
 			}
 		}
 	}
@@ -86,8 +89,45 @@ func body[T any](r *http.Request) (T, error) {
 	// 验证JSON
 	validate := validator.New(validator.WithRequiredStructEnabled())
 	if err := validate.Struct(result); err != nil {
+		validationErrorToMessage := func(ve validator.FieldError) string {
+			fieldName := ve.Field()
+			switch fieldName {
+			case "Email":
+				fieldName = "邮箱"
+			case "Username":
+				fieldName = "用户名"
+			case "Password":
+				fieldName = "密码"
+			case "VerifyCode":
+				fieldName = "验证码"
+			}
+
+			switch ve.Tag() {
+			case "required":
+				return fmt.Sprintf("%s不能为空", fieldName)
+			case "email":
+				return fmt.Sprintf("%s必须是有效的邮箱地址", fieldName)
+			case "min":
+				return fmt.Sprintf("%s至少需要%s个字符", fieldName, ve.Param())
+			case "max":
+				return fmt.Sprintf("%s不能超过%s个字符", fieldName, ve.Param())
+			case "len":
+				return fmt.Sprintf("%s长度必须为%s位", fieldName, ve.Param())
+			case "numeric":
+				return fmt.Sprintf("%s必须是数字", fieldName)
+			case "alphanum":
+				return fmt.Sprintf("%s只能包含字母和数字", fieldName)
+			default:
+				return fmt.Sprintf("%s验证失败(%s)", fieldName, ve.Tag())
+			}
+		}
+
 		errors := err.(validator.ValidationErrors)
-		return zero, badRequest(fmt.Sprintf("invalid request: %s", errors))
+		messages := make([]string, len(errors))
+		for i, ve := range errors {
+			messages[i] = validationErrorToMessage(ve)
+		}
+		return zero, badRequest(strings.Join(messages, "\n"))
 	}
 
 	return result, nil
