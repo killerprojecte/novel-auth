@@ -4,10 +4,12 @@ import (
 	"auth/internal/infra"
 	"auth/internal/repository"
 	"auth/internal/service"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func env(key, fallback string) string {
@@ -28,8 +30,7 @@ func envInt(key string, fallback int) int {
 }
 
 func main() {
-	mux := http.NewServeMux()
-
+	// infra
 	db := infra.NewSqlDb(
 		env("DB_HOST", "localhost"),
 		envInt("DB_PORT", 5432),
@@ -48,10 +49,12 @@ func main() {
 		env("MAILGUN_APIKEY", ""),
 	)
 
+	// repository
 	userRepo := repository.NewUserRepository(db)
 	eventRepo := repository.NewEventRepository(db)
 	codeRepo := repository.NewCodeRepository(rdb)
 
+	// service
 	jwt_secret := env("JWT_SECRET", "secret")
 	authService := service.NewAuthService(
 		jwt_secret,
@@ -66,16 +69,17 @@ func main() {
 		eventRepo,
 	)
 
-	const root = "/api/v1"
-	service.UseAuthService(mux, authService, root+"/auth")
-	service.UseAdminService(mux, adminService, root+"/admin")
-	mux.HandleFunc("GET /health",
-		func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("OK"))
-		},
-	)
+	// router
+	router := chi.NewRouter()
+	router.Use(middleware.Logger)
 
-	log.Print("Listening... http://localhost:3000")
-	http.ListenAndServe(":3000", mux)
+	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("OK"))
+	})
+	router.Route("/api/v1", func(router chi.Router) {
+		router.Route("/auth", authService.Use)
+		router.Route("/admin", adminService.Use)
+	})
+	http.ListenAndServe(":3000", router)
 }

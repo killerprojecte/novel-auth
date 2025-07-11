@@ -7,16 +7,12 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/go-chi/chi/v5"
 )
 
-func UseAuthService(mux *http.ServeMux, s AuthService, path string) {
-	mux.HandleFunc("POST "+path+"/register", toHandler(s.Register))
-	mux.HandleFunc("POST "+path+"/login", toHandler(s.Login))
-	mux.HandleFunc("POST "+path+"/refresh", toHandler(s.Refresh))
-	mux.HandleFunc("POST "+path+"/email/verify/request", toHandler(s.RequestEmailVerification))
-}
-
 type AuthService interface {
+	Use(chi.Router)
 	Register(http.ResponseWriter, *http.Request) error
 	Login(http.ResponseWriter, *http.Request) error
 	Refresh(http.ResponseWriter, *http.Request) error
@@ -46,6 +42,13 @@ func NewAuthService(
 		email:     email,
 	}
 	return s
+}
+
+func (s *authService) Use(router chi.Router) {
+	router.Post("/register", toHandler(s.Register))
+	router.Post("/login", toHandler(s.Login))
+	router.Post("/refresh", toHandler(s.Refresh))
+	router.Post("/email/verify/request", toHandler(s.RequestEmailVerification))
 }
 
 func (s *authService) updateObsoletePassword(user *repository.User, newPassword string) error {
