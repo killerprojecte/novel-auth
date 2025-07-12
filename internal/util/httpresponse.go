@@ -2,12 +2,67 @@ package util
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 )
 
+type HttpError struct {
+	StatusCode int
+	Message    string
+}
+
+func (e *HttpError) Error() string {
+	return fmt.Sprintf("[%d] %s", e.StatusCode, e.Message)
+}
+
+func NewHttpError(statusCode int, message string) *HttpError {
+	return &HttpError{
+		StatusCode: statusCode,
+		Message:    message,
+	}
+}
+
+func NotFound(message string) *HttpError {
+	return NewHttpError(http.StatusNotFound, message)
+}
+
+func BadRequest(message string) *HttpError {
+	return NewHttpError(http.StatusBadRequest, message)
+}
+
+func Unauthorized(message string) *HttpError {
+	return NewHttpError(http.StatusUnauthorized, message)
+}
+
+func InternalServerError(message string) *HttpError {
+	return NewHttpError(http.StatusInternalServerError, message)
+}
+
+func EH(f func(http.ResponseWriter, *http.Request) error) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := f(w, r)
+		if err != nil {
+			RespondError(w, err)
+			return
+		}
+	}
+}
+
 // 修复http.Error的额外换行符问题
-func RespondError(w http.ResponseWriter, code int, message string) {
+func RespondError(w http.ResponseWriter, err error) {
+	var code int
+	var message string
+
+	httpErr := &HttpError{}
+	if errors.As(err, &httpErr) {
+		code = httpErr.StatusCode
+		message = httpErr.Message
+	} else {
+		code = http.StatusInternalServerError
+		message = err.Error()
+	}
+
 	h := w.Header()
 	h.Del("Content-Length")
 	h.Set("Content-Type", "text/plain; charset=utf-8")

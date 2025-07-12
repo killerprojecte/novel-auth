@@ -45,10 +45,10 @@ func NewAuthService(
 }
 
 func (s *authService) Use(router chi.Router) {
-	router.Post("/register", util.E(s.Register))
-	router.Post("/login", util.E(s.Login))
-	router.Post("/refresh", util.E(s.Refresh))
-	router.Post("/email/verify/request", util.E(s.RequestEmailVerification))
+	router.Post("/register", util.EH(s.Register))
+	router.Post("/login", util.EH(s.Login))
+	router.Post("/refresh", util.EH(s.Refresh))
+	router.Post("/email/verify/request", util.EH(s.RequestEmailVerification))
 }
 
 func (s *authService) updateObsoletePassword(user *repository.User, newPassword string) error {
@@ -102,13 +102,13 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 		return util.InternalServerError("failed to save user")
 	}
 
-	err = generateJwtToken(s.jwtKey, w, &userClaims{
+	err = util.IssueToken(w, &util.LoginUser{
 		Username:  user.Username,
 		Role:      user.Role,
 		CreatedAt: user.CreatedAt,
 	})
 	if err != nil {
-		return util.InternalServerError("failed to generate JWT token")
+		return err
 	}
 
 	s.eventRepo.Save(&repository.Event{
@@ -157,7 +157,7 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 		return util.Unauthorized("invalid credentials")
 	}
 
-	err = generateJwtToken(s.jwtKey, w, &userClaims{
+	err = util.IssueToken(w, &util.LoginUser{
 		Username:  user.Username,
 		Role:      user.Role,
 		CreatedAt: user.CreatedAt,
@@ -188,12 +188,12 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *authService) Refresh(w http.ResponseWriter, r *http.Request) error {
-	claims, err := authenticate(s.jwtKey, r)
+	verifiedUser, err := util.GetVerifiedUser(r)
 	if err != nil {
 		return err
 	}
 
-	user, err := s.userRepo.FindByUsername(claims.Username)
+	user, err := s.userRepo.FindByUsername(verifiedUser.Username)
 	if err != nil {
 		return err
 	}
@@ -201,11 +201,11 @@ func (s *authService) Refresh(w http.ResponseWriter, r *http.Request) error {
 		return util.NotFound("user not found")
 	}
 
-	err = generateJwtToken(s.jwtKey, w, &userClaims{
+	err = util.RefreshToken(w, &util.LoginUser{
 		Username:  user.Username,
 		Role:      user.Role,
 		CreatedAt: user.CreatedAt,
-	})
+	}, &verifiedUser)
 	if err != nil {
 		return err
 	}
