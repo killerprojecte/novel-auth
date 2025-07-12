@@ -20,7 +20,6 @@ type AuthService interface {
 }
 
 type authService struct {
-	jwtKey    string
 	userRepo  repository.UserRepository
 	eventRepo repository.EventRepository
 	codeRepo  repository.CodeRepository
@@ -28,14 +27,12 @@ type authService struct {
 }
 
 func NewAuthService(
-	jwtKey string,
 	userRepo repository.UserRepository,
 	eventRepo repository.EventRepository,
 	codeRepo repository.CodeRepository,
 	email infra.EmailClient,
 ) AuthService {
 	s := &authService{
-		jwtKey:    jwtKey,
 		userRepo:  userRepo,
 		eventRepo: eventRepo,
 		codeRepo:  codeRepo,
@@ -102,7 +99,7 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 		return util.InternalServerError("failed to save user")
 	}
 
-	err = util.IssueToken(w, &util.LoginUser{
+	err = util.IssueToken(w, &util.VerifiedUser{
 		Username:  user.Username,
 		Role:      user.Role,
 		CreatedAt: user.CreatedAt,
@@ -157,7 +154,7 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 		return util.Unauthorized("invalid credentials")
 	}
 
-	err = util.IssueToken(w, &util.LoginUser{
+	err = util.IssueToken(w, &util.VerifiedUser{
 		Username:  user.Username,
 		Role:      user.Role,
 		CreatedAt: user.CreatedAt,
@@ -188,7 +185,7 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 }
 
 func (s *authService) Refresh(w http.ResponseWriter, r *http.Request) error {
-	verifiedUser, err := util.GetVerifiedUser(r)
+	verifiedUser, err := util.GetVerifiedUser(r, util.LevelMember)
 	if err != nil {
 		return err
 	}
@@ -201,11 +198,12 @@ func (s *authService) Refresh(w http.ResponseWriter, r *http.Request) error {
 		return util.NotFound("user not found")
 	}
 
-	err = util.RefreshToken(w, &util.LoginUser{
+	err = util.RefreshToken(w, &util.VerifiedUser{
 		Username:  user.Username,
 		Role:      user.Role,
 		CreatedAt: user.CreatedAt,
-	}, &verifiedUser)
+		ExpiredAt: verifiedUser.ExpiredAt,
+	})
 	if err != nil {
 		return err
 	}

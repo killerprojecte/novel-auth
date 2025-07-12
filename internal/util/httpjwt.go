@@ -1,34 +1,67 @@
 package util
 
 import (
+	"auth/internal/repository"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type AuthenticateLevel string
+type VerifyLevel string
 
 const (
-	LevelUser  AuthenticateLevel = "user"
-	LevelAdmin AuthenticateLevel = "admin"
+	LevelAdmin  VerifyLevel = "admin"
+	LevelMember VerifyLevel = "member"
 )
 
 type VerifiedUser struct {
 	Username  string
 	Role      string
 	CreatedAt time.Time
+	ExpiredAt time.Time
 }
-
-type LoginUser = VerifiedUser
 
 var JwtKey string
 
-func GetVerifiedUser(r *http.Request) (VerifiedUser, error) {
+func GetVerifiedUser(r *http.Request, level VerifyLevel) (VerifiedUser, error) {
 	claims, err := getClaimFromCookie(r)
 	if err != nil {
 		return VerifiedUser{}, err
 	}
+
+	switch level {
+	case LevelAdmin:
+		if claims.Role != repository.RoleAdmin {
+			return VerifiedUser{}, Unauthorized("insufficient privileges")
+		}
+		// 危险接口限制 token 有效时间
+		if time.Since(claims.IssuedAt.Time).Minutes() > 15 {
+			return VerifiedUser{}, Unauthorized("user is banned")
+		}
+	case LevelMember:
+		validRoles := []string{
+			repository.RoleAdmin,
+			repository.RoleMember,
+			repository.RoleGuest,
+		}
+		if !slices.Contains(validRoles, claims.Role) {
+			return VerifiedUser{}, Unauthorized("insufficient privileges")
+		}
+	default:
+		return VerifiedUser{}, Unauthorized("invalid verification level")
+	}
+
+	if level == LevelMember {
+		if claims.Role != string(LevelMember) && claims.Role != string(LevelAdmin) {
+			return VerifiedUser{}, Unauthorized("member privileges required")
+		}
+	}
+	if level == LevelAdmin && claims.Role != string(LevelAdmin) {
+		return VerifiedUser{}, Unauthorized("admin privileges required")
+	}
+
 	return VerifiedUser{
 		Username:  claims.Subject,
 		Role:      claims.Role,
@@ -36,14 +69,14 @@ func GetVerifiedUser(r *http.Request) (VerifiedUser, error) {
 	}, nil
 }
 
-func IssueToken(w http.ResponseWriter, user *LoginUser) error {
+func IssueToken(w http.ResponseWriter, user *VerifiedUser) error {
 	if err := setClaimToCookie(w, user); err != nil {
 		return err
 	}
 	return nil
 }
 
-func RefreshToken(w http.ResponseWriter, user *LoginUser, verifiedUser *VerifiedUser) error {
+func RefreshToken(w http.ResponseWriter, user *VerifiedUser) error {
 	if err := setClaimToCookie(w, user); err != nil {
 		return err
 	}
@@ -80,9 +113,12 @@ func getClaimFromCookie(r *http.Request) (userClaim, error) {
 	return *claims, nil
 }
 
-func setClaimToCookie(w http.ResponseWriter, user *LoginUser) error {
+func setClaimToCookie(w http.ResponseWriter, user *VerifiedUser) error {
 	issuedAt := time.Now()
-	expiredAt := issuedAt.Add(time.Hour * 24 * 30)
+	expiredAt := user.ExpiredAt
+	if expiredAt.IsZero() {
+		expiredAt = issuedAt.Add(time.Hour * 24 * 30)
+	}
 
 	claims := &userClaim{
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -106,7 +142,7 @@ func setClaimToCookie(w http.ResponseWriter, user *LoginUser) error {
 		Value:    token,
 		Domain:   ".novelia.cc",
 		Path:     "/",
-		MaxAge:   3600 * 24 * 30,
+		MaxAge:   int(expiredAt.Sub(issuedAt).Seconds() - 60),
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,

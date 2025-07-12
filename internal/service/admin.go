@@ -14,18 +14,15 @@ type AdminService interface {
 }
 
 type adminService struct {
-	jwtKey    string
 	userRepo  repository.UserRepository
 	eventRepo repository.EventRepository
 }
 
 func NewAdminService(
-	jwtKey string,
 	userRepo repository.UserRepository,
 	eventRepo repository.EventRepository,
 ) AdminService {
 	s := &adminService{
-		jwtKey:    jwtKey,
 		userRepo:  userRepo,
 		eventRepo: eventRepo,
 	}

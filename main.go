@@ -4,6 +4,7 @@ import (
 	"auth/internal/infra"
 	"auth/internal/repository"
 	"auth/internal/service"
+	"auth/internal/util"
 	"net/http"
 	"os"
 	"strconv"
@@ -30,6 +31,9 @@ func envInt(key string, fallback int) int {
 }
 
 func main() {
+	// util
+	util.JwtKey = env("JWT_SECRET", "secret")
+
 	// infra
 	db := infra.NewSqlDb(
 		env("DB_HOST", "localhost"),
@@ -55,16 +59,13 @@ func main() {
 	codeRepo := repository.NewCodeRepository(rdb)
 
 	// service
-	jwt_secret := env("JWT_SECRET", "secret")
 	authService := service.NewAuthService(
-		jwt_secret,
 		userRepo,
 		eventRepo,
 		codeRepo,
 		email,
 	)
 	adminService := service.NewAdminService(
-		jwt_secret,
 		userRepo,
 		eventRepo,
 	)

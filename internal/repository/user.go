@@ -10,10 +10,10 @@ import (
 )
 
 const (
-	RoleModerator string = "moderator"
-	RoleMember    string = "member"
-	RoleGuest     string = "guest"
-	RoleBanned    string = "banned"
+	RoleAdmin  string = "admin"
+	RoleMember string = "member"
+	RoleGuest  string = "guest"
+	RoleBanned string = "banned"
 )
 
 type User = model.AuthUser
