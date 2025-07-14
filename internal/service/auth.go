@@ -87,7 +87,7 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 
 	hashedPassword, err := util.GenerateHash(req.Password)
 	if err != nil {
-		return util.InternalServerError("密码加密失败")
+		return util.InternalServerError("密码哈希失败")
 	}
 
 	user := &repository.User{
@@ -147,16 +147,17 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 	var user *repository.User
 	if strings.Contains(req.Username, "@") {
 		user, err = s.userRepo.FindByEmail(req.Username)
-	} else {
+	}
+	if err != nil {
 		user, err = s.userRepo.FindByUsername(req.Username)
 	}
 	if err != nil {
-		return util.NotFound("user not found")
+		return util.NotFound("用户不存在")
 	}
 
 	v, err := util.ValidateHash(user.Password, req.Password)
 	if !v.Valid || err != nil {
-		return util.Unauthorized("invalid credentials")
+		return util.Unauthorized("密码错误")
 	}
 
 	err = util.IssueToken(w, &util.VerifiedUser{
@@ -165,7 +166,7 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 		CreatedAt: user.CreatedAt,
 	})
 	if err != nil {
-		return util.InternalServerError("failed to generate JWT token")
+		return util.InternalServerError("生成令牌失败")
 	}
 
 	if v.Obsolete {
@@ -200,7 +201,7 @@ func (s *authService) Refresh(w http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	if user == nil {
-		return util.NotFound("user not found")
+		return util.NotFound("用户不存在")
 	}
 
 	err = util.RefreshToken(w, &util.VerifiedUser{
@@ -231,12 +232,12 @@ func (s *authService) RequestEmailVerification(w http.ResponseWriter, r *http.Re
 
 	code, err := s.codeRepo.SetEmailVerifyCode(req.Email)
 	if err != nil {
-		return util.InternalServerError("failed to create verification code")
+		return util.InternalServerError("创建验证码失败")
 	}
 
 	err = s.email.SendVerifyEmail(req.Email, code)
 	if err != nil {
-		return util.InternalServerError("failed to send verification email")
+		return util.InternalServerError("发送验证邮件失败")
 	}
 
 	s.eventRepo.Save(&repository.Event{
@@ -246,5 +247,5 @@ func (s *authService) RequestEmailVerification(w http.ResponseWriter, r *http.Re
 		CreatedAt: time.Now(),
 	})
 
-	return util.RespondJson(w, "verification email sent")
+	return util.RespondJson(w, "验证邮件已发送")
 }
