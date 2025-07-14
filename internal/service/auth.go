@@ -59,7 +59,7 @@ func (s *authService) updateObsoletePassword(user *repository.User, newPassword 
 
 type reqRegister struct {
 	Email      string `json:"email" validate:"required,email"`
-	Username   string `json:"username" validate:"required,min=2,max=50"`
+	Username   string `json:"username" validate:"required,min=2,max=16"`
 	Password   string `json:"password" validate:"required,min=8,max=100"`
 	VerifyCode string `json:"verify_code" validate:"required,numeric,len=6"`
 }
@@ -75,14 +75,19 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-
+	if err := util.ValidUsername(req.Username); err != nil {
+		return err
+	}
+	if err := util.ValidPassword(req.Password); err != nil {
+		return err
+	}
 	if !s.codeRepo.CheckEmailVerifyCode(req.Email, req.VerifyCode) {
-		return util.BadRequest("invalid verification code")
+		return util.BadRequest("无效验证码")
 	}
 
 	hashedPassword, err := util.GenerateHash(req.Password)
 	if err != nil {
-		return util.InternalServerError("failed to generate password hash")
+		return util.InternalServerError("密码加密失败")
 	}
 
 	user := &repository.User{
@@ -96,7 +101,7 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 	}
 	err = s.userRepo.Save(user)
 	if err != nil {
-		return util.InternalServerError("failed to save user")
+		return util.InternalServerError("用户保存失败")
 	}
 
 	err = util.IssueToken(w, &util.VerifiedUser{

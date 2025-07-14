@@ -42,8 +42,18 @@ func TestAuthRegisterBadRequestCases(t *testing.T) {
 		},
 		{
 			name:    "LongUsername",
-			modify:  func(r *reqRegister) { r.Username = strings.Repeat("a", 51) },
-			message: "用户名不能超过50个字符",
+			modify:  func(r *reqRegister) { r.Username = strings.Repeat("a", 17) },
+			message: "用户名不能超过16个字符",
+		},
+		{
+			name:    "InvalidUsername",
+			modify:  func(r *reqRegister) { r.Username = " User" },
+			message: "用户名前后不能有空格",
+		},
+		{
+			name:    "InvalidUsername",
+			modify:  func(r *reqRegister) { r.Username = "U\nser" },
+			message: "用户名只能包含可打印字符",
 		},
 		{
 			name:    "ShortVerifyCode",
