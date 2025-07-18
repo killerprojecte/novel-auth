@@ -13,6 +13,9 @@ func ValidUsername(username string) error {
 		if !unicode.IsPrint(r) {
 			return BadRequest("用户名只能包含可打印字符")
 		}
+		if r == '@' {
+			return BadRequest("用户名不能包含@字符")
+		}
 	}
 	return nil
 }
