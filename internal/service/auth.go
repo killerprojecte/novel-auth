@@ -48,16 +48,8 @@ func (s *authService) Use(router chi.Router) {
 	router.Post("/email/verify/request", util.EH(s.RequestEmailVerification))
 }
 
-func (s *authService) updateObsoletePassword(user *repository.User, newPassword string) error {
-	hashedPassword, err := util.GenerateHash(newPassword)
-	if err != nil {
-		return err
-	}
-	user.Password = hashedPassword
-	return s.userRepo.UpdateHashedPassword(user)
-}
-
 type reqRegister struct {
+	App        string `json:"app" validate:"required"`
 	Email      string `json:"email" validate:"required,email"`
 	Username   string `json:"username" validate:"required,min=2,max=16"`
 	Password   string `json:"password" validate:"required,min=8,max=100"`
@@ -104,15 +96,6 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 		return util.InternalServerError("用户保存失败")
 	}
 
-	err = util.IssueToken(w, &util.VerifiedUser{
-		Username:  user.Username,
-		Role:      user.Role,
-		CreatedAt: user.CreatedAt,
-	})
-	if err != nil {
-		return err
-	}
-
 	s.eventRepo.Save(&repository.Event{
 		UserID:    &user.ID,
 		Action:    repository.EventRegister,
@@ -120,22 +103,26 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 		CreatedAt: time.Now(),
 	})
 
-	return util.RespondJson(w, respRegister{
-		Username:  user.Username,
-		Role:      user.Role,
-		CreatedAt: user.CreatedAt,
+	return util.RespondAuthTokens(w, util.TokenOptions{
+		App:              req.App,
+		Username:         user.Username,
+		Role:             user.Role,
+		CreatedAt:        user.CreatedAt,
+		WithRefreshToken: true,
 	})
 }
 
 type reqLogin struct {
+	App      string `json:"app" validate:"required"`
 	Username string `json:"username" validate:"required"`
 	Password string `json:"password" validate:"required"`
 }
 
 type respLogin struct {
-	Username  string    `json:"username" validate:"required,min=3,max=50"`
-	Role      string    `json:"role" validate:"required"`
-	CreatedAt time.Time `json:"created_at" validate:"required"`
+	AccessToken string    `json:"access_token" validate:"required"`
+	Username    string    `json:"username" validate:"required"`
+	Role        string    `json:"role" validate:"required"`
+	CreatedAt   time.Time `json:"created_at" validate:"required"`
 }
 
 func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
@@ -159,18 +146,12 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 	if !v.Valid || err != nil {
 		return util.Unauthorized("密码错误")
 	}
-
-	err = util.IssueToken(w, &util.VerifiedUser{
-		Username:  user.Username,
-		Role:      user.Role,
-		CreatedAt: user.CreatedAt,
-	})
-	if err != nil {
-		return util.InternalServerError("生成令牌失败")
-	}
-
 	if v.Obsolete {
-		s.updateObsoletePassword(user, req.Password)
+		newHashedPassword, err := util.GenerateHash(req.Password)
+		if err == nil {
+			user.Password = newHashedPassword
+			s.userRepo.UpdateHashedPassword(user)
+		}
 	}
 
 	user.LastLogin = time.Now()
@@ -182,21 +163,22 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 		Detail:    "{}",
 		CreatedAt: time.Now(),
 	})
-
-	return util.RespondJson(w, respLogin{
-		Username:  user.Username,
-		Role:      user.Role,
-		CreatedAt: user.CreatedAt,
+	return util.RespondAuthTokens(w, util.TokenOptions{
+		App:              req.App,
+		Username:         user.Username,
+		Role:             user.Role,
+		CreatedAt:        user.CreatedAt,
+		WithRefreshToken: true,
 	})
 }
 
 func (s *authService) Refresh(w http.ResponseWriter, r *http.Request) error {
-	verifiedUser, err := util.GetVerifiedUser(r, util.LevelMember)
+	username, err := util.VerifyRefreshToken(r)
 	if err != nil {
 		return err
 	}
 
-	user, err := s.userRepo.FindByUsername(verifiedUser.Username)
+	user, err := s.userRepo.FindByUsername(username)
 	if err != nil {
 		return err
 	}
@@ -204,20 +186,16 @@ func (s *authService) Refresh(w http.ResponseWriter, r *http.Request) error {
 		return util.NotFound("用户不存在")
 	}
 
-	err = util.RefreshToken(w, &util.VerifiedUser{
-		Username:  user.Username,
-		Role:      user.Role,
-		CreatedAt: user.CreatedAt,
-		ExpiredAt: verifiedUser.ExpiredAt,
-	})
-	if err != nil {
-		return err
-	}
-
 	user.LastLogin = time.Now()
 	s.userRepo.UpdateLastLogin(user)
 
-	return nil
+	return util.RespondAuthTokens(w, util.TokenOptions{
+		App:              r.URL.Query().Get("app"),
+		Username:         user.Username,
+		Role:             user.Role,
+		CreatedAt:        user.CreatedAt,
+		WithRefreshToken: false,
+	})
 }
 
 type reqEmailCode struct {

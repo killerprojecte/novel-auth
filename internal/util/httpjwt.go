@@ -3,150 +3,166 @@ package util
 import (
 	"auth/internal/repository"
 	"net/http"
-	"slices"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
-type VerifyLevel string
-
-const (
-	LevelAdmin  VerifyLevel = "admin"
-	LevelMember VerifyLevel = "member"
+var (
+	RefreshTokenSecret string
+	AccessTokenSecret  string
 )
 
-type VerifiedUser struct {
-	Username  string
-	Role      string
-	CreatedAt time.Time
-	ExpiredAt time.Time
-}
+const (
+	RefreshTokenCookieName = "refresh-token"
+	RefreshTokenLifetime   = time.Hour * 24 * 90
+	AccessTokenLifetime    = time.Hour * 24
+)
 
-var JwtKey string
+type refreshClaim = jwt.RegisteredClaims
 
-func GetVerifiedUser(r *http.Request, level VerifyLevel) (VerifiedUser, error) {
-	claims, err := getClaimFromCookie(r)
-	if err != nil {
-		return VerifiedUser{}, err
-	}
-
-	switch level {
-	case LevelAdmin:
-		if claims.Role != repository.RoleAdmin {
-			return VerifiedUser{}, Unauthorized("insufficient privileges")
-		}
-		// 危险接口限制 token 有效时间
-		if time.Since(claims.IssuedAt.Time).Minutes() > 15 {
-			return VerifiedUser{}, Unauthorized("user is banned")
-		}
-	case LevelMember:
-		validRoles := []string{
-			repository.RoleAdmin,
-			repository.RoleMember,
-			repository.RoleGuest,
-		}
-		if !slices.Contains(validRoles, claims.Role) {
-			return VerifiedUser{}, Unauthorized("insufficient privileges")
-		}
-	default:
-		return VerifiedUser{}, Unauthorized("invalid verification level")
-	}
-
-	if level == LevelMember {
-		if claims.Role != string(LevelMember) && claims.Role != string(LevelAdmin) {
-			return VerifiedUser{}, Unauthorized("member privileges required")
-		}
-	}
-	if level == LevelAdmin && claims.Role != string(LevelAdmin) {
-		return VerifiedUser{}, Unauthorized("admin privileges required")
-	}
-
-	return VerifiedUser{
-		Username:  claims.Subject,
-		Role:      claims.Role,
-		CreatedAt: claims.CreatedAt.Time,
-	}, nil
-}
-
-func IssueToken(w http.ResponseWriter, user *VerifiedUser) error {
-	if err := setClaimToCookie(w, user); err != nil {
-		return err
-	}
-	return nil
-}
-
-func RefreshToken(w http.ResponseWriter, user *VerifiedUser) error {
-	if err := setClaimToCookie(w, user); err != nil {
-		return err
-	}
-	return nil
-}
-
-type userClaim struct {
+type accessClaim struct {
 	jwt.RegisteredClaims
 	Role      string           `json:"role"`
 	CreatedAt *jwt.NumericDate `json:"crat"`
 }
 
-func getClaimFromCookie(r *http.Request) (userClaim, error) {
-	zero := userClaim{}
+func VerifyRefreshToken(r *http.Request) (string, error) {
+	cookie, err := r.Cookie(RefreshTokenCookieName)
 
-	cookie, err := r.Cookie("auth")
 	if err != nil {
-		return zero, Unauthorized("missing authentication token")
+		return "", Unauthorized("缺少刷新令牌")
 	}
 
-	token, err := jwt.ParseWithClaims(cookie.Value, &userClaim{},
-		func(token *jwt.Token) (interface{}, error) {
-			return []byte(JwtKey), nil
-		},
-	)
-	if err != nil || !token.Valid {
-		return zero, Unauthorized("missing authentication token")
+	claims, err := parseClaims(cookie.Value, RefreshTokenSecret, &refreshClaim{})
+	if err != nil {
+		return "", Unauthorized("无效的刷新令牌")
 	}
 
-	claims, ok := token.Claims.(*userClaim)
-	if !ok {
-		return zero, Unauthorized("invalid authentication token")
-	}
-	return *claims, nil
+	return claims.Subject, nil
 }
 
-func setClaimToCookie(w http.ResponseWriter, user *VerifiedUser) error {
-	issuedAt := time.Now()
-	expiredAt := user.ExpiredAt
-	if expiredAt.IsZero() {
-		expiredAt = issuedAt.Add(time.Hour * 24 * 30)
+func VerifyAccessToken(r *http.Request, requireAdmin bool) (string, error) {
+	tokenString := r.Header.Get("Authorization")
+
+	if (tokenString == "") || !strings.HasPrefix(tokenString, "Bearer ") {
+		return "", Unauthorized("缺少访问令牌")
 	}
 
-	claims := &userClaim{
+	claims, err := parseClaims(tokenString[len("Bearer "):], AccessTokenSecret, &accessClaim{})
+	if err != nil {
+		return "", Unauthorized("无效的访问令牌")
+	}
+
+	if requireAdmin && claims.Role != repository.RoleAdmin {
+		return "", Unauthorized("权限不足")
+	}
+
+	return claims.Subject, nil
+}
+
+type TokenOptions struct {
+	App              string
+	Username         string
+	Role             string
+	CreatedAt        time.Time
+	WithRefreshToken bool
+}
+
+func RespondAuthTokens(w http.ResponseWriter, opts TokenOptions) error {
+	if opts.WithRefreshToken {
+		refreshToken, err := issueRefreshToken(opts.Username)
+		if err != nil {
+			return err
+		}
+		attachRefreshToken(w, refreshToken)
+	}
+	accessToken, err := issueAccessToken(opts.App, opts.Username, opts.Role, opts.CreatedAt)
+	if err != nil {
+		return err
+	}
+	return RespondText(w, accessToken)
+}
+
+func issueAccessToken(app string, username string, role string, createdAt time.Time) (string, error) {
+	issuedAt := time.Now()
+	expiresAt := issuedAt.Add(AccessTokenLifetime)
+
+	claims := accessClaim{
 		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   user.Username,
-			ExpiresAt: jwt.NewNumericDate(expiredAt),
+			Subject:   username,
+			Audience:  jwt.ClaimStrings{app},
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(issuedAt),
 		},
-		Role:      user.Role,
-		CreatedAt: jwt.NewNumericDate(user.CreatedAt),
+		Role:      role,
+		CreatedAt: jwt.NewNumericDate(createdAt),
 	}
 
 	token, err := jwt.
 		NewWithClaims(jwt.SigningMethodHS256, claims).
-		SignedString(JwtKey)
+		SignedString(AccessTokenSecret)
 	if err != nil {
-		return InternalServerError("failed to generate JWT token")
+		return "", InternalServerError("无法创建访问令牌")
 	}
 
+	return token, nil
+}
+
+func issueRefreshToken(username string) (string, error) {
+	issuedAt := time.Now()
+	expiresAt := issuedAt.Add(RefreshTokenLifetime)
+
+	claims := refreshClaim{
+		Subject:   username,
+		ExpiresAt: jwt.NewNumericDate(expiresAt),
+		IssuedAt:  jwt.NewNumericDate(issuedAt),
+	}
+
+	token, err := jwt.
+		NewWithClaims(jwt.SigningMethodHS256, claims).
+		SignedString(RefreshTokenSecret)
+	if err != nil {
+		return "", InternalServerError("无法创建刷新令牌")
+	}
+	return token, nil
+
+}
+
+func attachRefreshToken(w http.ResponseWriter, token string) {
 	cookie := &http.Cookie{
-		Name:     "auth",
+		Name:     RefreshTokenCookieName,
 		Value:    token,
-		Domain:   ".novelia.cc",
 		Path:     "/",
-		MaxAge:   int(expiredAt.Sub(issuedAt).Seconds() - 60),
+		MaxAge:   int(RefreshTokenLifetime.Seconds() - 60),
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
 	}
 	http.SetCookie(w, cookie)
-	return nil
+}
+
+func parseClaims[T jwt.Claims](
+	tokenString string,
+	secret string,
+	claims T,
+) (T, error) {
+	var zero T
+
+	token, err := jwt.ParseWithClaims(tokenString, claims,
+		func(token *jwt.Token) (interface{}, error) {
+			return []byte(secret), nil
+		},
+	)
+	if err != nil || !token.Valid {
+		return zero, err
+	}
+
+	validClaims, ok := token.Claims.(T)
+	if !ok {
+		return zero, jwt.ErrTokenInvalidClaims
+	}
+
+	return validClaims, nil
 }

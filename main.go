@@ -32,7 +32,8 @@ func envInt(key string, fallback int) int {
 
 func main() {
 	// util
-	util.JwtKey = env("JWT_SECRET", "secret")
+	util.RefreshTokenSecret = env("REFRESH_TOKEN_SECRET", "secret")
+	util.AccessTokenSecret = env("ACCESS_TOKEN_SECRET", "secret")
 
 	// infra
 	db := infra.NewSqlDb(

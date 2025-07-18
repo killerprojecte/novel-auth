@@ -9,6 +9,8 @@ services:
       - redis
     restart: unless-stopped
     environment:
+      - REFRESH_TOKEN_SECRET
+      - ACCESS_TOKEN_SECRET
       - DB_HOST=postgresql
       - DB_PASSWORD=POSTGRES_PASSWORD
       - RDB_HOST=redis
