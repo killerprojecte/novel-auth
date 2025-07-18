@@ -56,12 +56,6 @@ type reqRegister struct {
 	VerifyCode string `json:"verify_code" validate:"required,numeric,len=6"`
 }
 
-type respRegister struct {
-	Username  string    `json:"username"`
-	Role      string    `json:"role"`
-	CreatedAt time.Time `json:"created_at"`
-}
-
 func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 	req, err := util.Body[reqRegister](r)
 	if err != nil {
@@ -116,13 +110,6 @@ type reqLogin struct {
 	App      string `json:"app" validate:"required"`
 	Username string `json:"username" validate:"required"`
 	Password string `json:"password" validate:"required"`
-}
-
-type respLogin struct {
-	AccessToken string    `json:"access_token" validate:"required"`
-	Username    string    `json:"username" validate:"required"`
-	Role        string    `json:"role" validate:"required"`
-	CreatedAt   time.Time `json:"created_at" validate:"required"`
 }
 
 func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {

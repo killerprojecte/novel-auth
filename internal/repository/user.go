@@ -10,10 +10,10 @@ import (
 )
 
 const (
-	RoleAdmin  string = "admin"
-	RoleMember string = "member"
-	RoleGuest  string = "guest"
-	RoleBanned string = "banned"
+	RoleAdmin      string = "admin"
+	RoleMember     string = "member"
+	RoleRestricted string = "restricted"
+	RoleBanned     string = "banned"
 )
 
 type User = model.AuthUser
@@ -32,6 +32,7 @@ type UserRepository interface {
 	Save(user *User) error
 	UpdateLastLogin(user *User) error
 	UpdateHashedPassword(user *User) error
+	UpdateRole(user *User) error
 }
 
 type userRepository struct {
@@ -118,6 +119,15 @@ func (r *userRepository) UpdateLastLogin(user *User) error {
 func (r *userRepository) UpdateHashedPassword(user *User) error {
 	stmt := AuthUser.UPDATE(AuthUser.Password).
 		SET(String(user.Password)).
+		WHERE(AuthUser.ID.EQ(Int(user.ID)))
+
+	_, err := stmt.Exec(r.db)
+	return err
+}
+
+func (r *userRepository) UpdateRole(user *User) error {
+	stmt := AuthUser.UPDATE(AuthUser.Role).
+		SET(String(user.Role)).
 		WHERE(AuthUser.ID.EQ(Int(user.ID)))
 
 	_, err := stmt.Exec(r.db)

@@ -10,9 +10,11 @@ import (
 )
 
 const (
-	EventLogin    string = "login"
-	EventRegister string = "register"
-	EventEmail    string = "email"
+	EventLogin        string = "login"
+	EventRegister     string = "register"
+	EventEmail        string = "email"
+	EventRestrictUser string = "restrict-user"
+	EventBanUser      string = "ban-user"
 )
 
 type Event = model.AuthEvent
