@@ -4,17 +4,10 @@ import (
 	"auth/.gen/auth/public/model"
 	. "auth/.gen/auth/public/table"
 	"database/sql"
+	"encoding/json"
 	"time"
 
 	. "github.com/go-jet/jet/v2/postgres"
-)
-
-const (
-	EventLogin        string = "login"
-	EventRegister     string = "register"
-	EventEmail        string = "email"
-	EventRestrictUser string = "restrict-user"
-	EventBanUser      string = "ban-user"
 )
 
 type Event = model.AuthEvent
@@ -28,7 +21,7 @@ type EventFilter struct {
 
 type EventRepository interface {
 	List(filter EventFilter, pageNumber, pageSize int64) ([]*Event, error)
-	Save(event *Event) error
+	Save(action string, detail interface{}) error
 }
 
 type eventRepository struct {
@@ -71,7 +64,13 @@ func (r *eventRepository) List(filter EventFilter, pageNumber, pageSize int64) (
 	return dest, nil
 }
 
-func (r *eventRepository) Save(event *Event) error {
+func (r *eventRepository) Save(action string, detail interface{}) error {
+	detailEncoded, _ := json.Marshal(detail)
+	event := &Event{
+		Action:    action,
+		Detail:    string(detailEncoded),
+		CreatedAt: time.Now(),
+	}
 	stmt := AuthEvent.INSERT(AuthUser.MutableColumns).
 		MODEL(event)
 

@@ -23,16 +23,20 @@ func NewHttpError(statusCode int, message string) *HttpError {
 	}
 }
 
-func NotFound(message string) *HttpError {
-	return NewHttpError(http.StatusNotFound, message)
-}
-
 func BadRequest(message string) *HttpError {
 	return NewHttpError(http.StatusBadRequest, message)
 }
 
 func Unauthorized(message string) *HttpError {
 	return NewHttpError(http.StatusUnauthorized, message)
+}
+
+func NotFound(message string) *HttpError {
+	return NewHttpError(http.StatusNotFound, message)
+}
+
+func Conflict(message string) *HttpError {
+	return NewHttpError(http.StatusConflict, message)
 }
 
 func InternalServerError(message string) *HttpError {

@@ -3,11 +3,14 @@ package service
 import (
 	"auth/internal/repository"
 	"auth/internal/util"
-	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi/v5"
+)
+
+const (
+	EventRestrictUser string = "restrict-user"
+	EventBanUser      string = "ban-user"
 )
 
 type AdminService interface {
@@ -79,21 +82,18 @@ func (s *adminService) RestrictUser(w http.ResponseWriter, r *http.Request) erro
 		return util.InternalServerError("更新用户角色失败")
 	}
 
-	detail, _ := json.Marshal(&struct {
-		ActorUser  string `json:"actor_user"`
-		TargetUser string `json:"target_user"`
-		Reason     string `json:"reason"`
-	}{
-		ActorUser:  adminUsername,
-		TargetUser: user.Username,
-		Reason:     req.Reason,
-	})
-	s.eventRepo.Save(&repository.Event{
-		UserID:    &user.ID,
-		Action:    repository.EventRestrictUser,
-		Detail:    string(detail),
-		CreatedAt: time.Now(),
-	})
+	s.eventRepo.Save(
+		EventRestrictUser,
+		&struct {
+			ActorUser  string `json:"actor_user"`
+			TargetUser string `json:"target_user"`
+			Reason     string `json:"reason"`
+		}{
+			ActorUser:  adminUsername,
+			TargetUser: user.Username,
+			Reason:     req.Reason,
+		},
+	)
 
 	return nil
 }
@@ -126,21 +126,18 @@ func (s *adminService) BanUser(w http.ResponseWriter, r *http.Request) error {
 		return util.InternalServerError("更新用户角色失败")
 	}
 
-	detail, _ := json.Marshal(&struct {
-		ActorUser  string `json:"actor_user"`
-		TargetUser string `json:"target_user"`
-		Reason     string `json:"reason"`
-	}{
-		ActorUser:  adminUsername,
-		TargetUser: user.Username,
-		Reason:     req.Reason,
-	})
-	s.eventRepo.Save(&repository.Event{
-		UserID:    &user.ID,
-		Action:    repository.EventBanUser,
-		Detail:    string(detail),
-		CreatedAt: time.Now(),
-	})
+	s.eventRepo.Save(
+		EventBanUser,
+		&struct {
+			ActorUser  string `json:"actor_user"`
+			TargetUser string `json:"target_user"`
+			Reason     string `json:"reason"`
+		}{
+			ActorUser:  adminUsername,
+			TargetUser: user.Username,
+			Reason:     req.Reason,
+		},
+	)
 
 	return nil
 }

@@ -11,6 +11,12 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+const (
+	EventLogin    string = "login"
+	EventRegister string = "register"
+	EventEmail    string = "email"
+)
+
 type AuthService interface {
 	Use(chi.Router)
 	Register(http.ResponseWriter, *http.Request) error
@@ -48,16 +54,14 @@ func (s *authService) Use(router chi.Router) {
 	router.Post("/email/verify/request", util.EH(s.RequestEmailVerification))
 }
 
-type reqRegister struct {
-	App        string `json:"app" validate:"required"`
-	Email      string `json:"email" validate:"required,email"`
-	Username   string `json:"username" validate:"required,min=2,max=16"`
-	Password   string `json:"password" validate:"required,min=8,max=100"`
-	VerifyCode string `json:"verify_code" validate:"required,numeric,len=6"`
-}
-
 func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
-	req, err := util.Body[reqRegister](r)
+	req, err := util.Body[struct {
+		App        string `json:"app" validate:"required"`
+		Email      string `json:"email" validate:"required,email"`
+		Username   string `json:"username" validate:"required,min=2,max=16"`
+		Password   string `json:"password" validate:"required,min=8,max=100"`
+		VerifyCode string `json:"verify_code" validate:"required,numeric,len=6"`
+	}](r)
 	if err != nil {
 		return err
 	}
@@ -90,12 +94,16 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 		return util.InternalServerError("用户保存失败")
 	}
 
-	s.eventRepo.Save(&repository.Event{
-		UserID:    &user.ID,
-		Action:    repository.EventRegister,
-		Detail:    "{}",
-		CreatedAt: time.Now(),
-	})
+	s.eventRepo.Save(
+		EventRegister,
+		&struct {
+			ActorUser  string `json:"actor_user"`
+			TargetUser string `json:"target_user"`
+		}{
+			ActorUser:  user.Username,
+			TargetUser: user.Username,
+		},
+	)
 
 	return util.RespondAuthTokens(w, util.TokenOptions{
 		App:              req.App,
@@ -106,14 +114,12 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-type reqLogin struct {
-	App      string `json:"app" validate:"required"`
-	Username string `json:"username" validate:"required"`
-	Password string `json:"password" validate:"required"`
-}
-
 func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
-	req, err := util.Body[reqLogin](r)
+	req, err := util.Body[struct {
+		App      string `json:"app" validate:"required"`
+		Username string `json:"username" validate:"required"`
+		Password string `json:"password" validate:"required"`
+	}](r)
 	if err != nil {
 		return err
 	}
@@ -144,12 +150,16 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 	user.LastLogin = time.Now()
 	s.userRepo.UpdateLastLogin(user)
 
-	s.eventRepo.Save(&repository.Event{
-		UserID:    &user.ID,
-		Action:    repository.EventLogin,
-		Detail:    "{}",
-		CreatedAt: time.Now(),
-	})
+	s.eventRepo.Save(
+		EventLogin,
+		&struct {
+			ActorUser  string `json:"actor_user"`
+			TargetUser string `json:"target_user"`
+		}{
+			ActorUser:  user.Username,
+			TargetUser: user.Username,
+		},
+	)
 	return util.RespondAuthTokens(w, util.TokenOptions{
 		App:              req.App,
 		Username:         user.Username,
@@ -185,14 +195,20 @@ func (s *authService) Refresh(w http.ResponseWriter, r *http.Request) error {
 	})
 }
 
-type reqEmailCode struct {
-	Email string `json:"email" validate:"required,email"`
-}
-
 func (s *authService) RequestEmailVerification(w http.ResponseWriter, r *http.Request) error {
-	req, err := util.Body[reqEmailCode](r)
+	req, err := util.Body[struct {
+		Email string `json:"email" validate:"required,email"`
+	}](r)
 	if err != nil {
 		return err
+	}
+
+	user, err := s.userRepo.FindByEmail(req.Email)
+	if err == nil {
+		return util.InternalServerError("邮件检查失败")
+	}
+	if user != nil {
+		return util.Conflict("邮箱已经被使用")
 	}
 
 	code, err := s.codeRepo.SetEmailVerifyCode(req.Email)
@@ -205,12 +221,14 @@ func (s *authService) RequestEmailVerification(w http.ResponseWriter, r *http.Re
 		return util.InternalServerError("发送验证邮件失败")
 	}
 
-	s.eventRepo.Save(&repository.Event{
-		UserID:    nil,
-		Action:    repository.EventEmail,
-		Detail:    "{}",
-		CreatedAt: time.Now(),
-	})
+	s.eventRepo.Save(
+		EventEmail,
+		&struct {
+			Email string `json:"email"`
+		}{
+			Email: req.Email,
+		},
+	)
 
 	return util.RespondJson(w, "验证邮件已发送")
 }
