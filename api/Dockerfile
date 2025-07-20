@@ -5,6 +5,6 @@ RUN go build -o api-server
 
 FROM alpine:3.22.1
 COPY --from=builder /api/api-server /api/api-server
-WORKDIR /app
+WORKDIR /api
 EXPOSE 3000
 CMD ["./api-server"]
