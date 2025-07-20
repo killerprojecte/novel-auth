@@ -76,13 +76,18 @@ func RespondAuthTokens(w http.ResponseWriter, opts TokenOptions) error {
 		if err != nil {
 			return err
 		}
-		attachRefreshToken(w, refreshToken)
+		attachRefreshToken(w, refreshToken, int(RefreshTokenLifetime.Seconds()-60))
 	}
 	accessToken, err := issueAccessToken(opts.App, opts.Username, opts.Role, opts.CreatedAt)
 	if err != nil {
 		return err
 	}
 	return RespondText(w, accessToken)
+}
+
+func RespondLogout(w http.ResponseWriter) error {
+	attachRefreshToken(w, "", 0)
+	return RespondText(w, "")
 }
 
 func issueAccessToken(app string, username string, role string, createdAt time.Time) (string, error) {
@@ -130,7 +135,7 @@ func issueRefreshToken(username string) (string, error) {
 
 }
 
-func attachRefreshToken(w http.ResponseWriter, token string) {
+func attachRefreshToken(w http.ResponseWriter, token string, maxAge int) {
 	cookie := &http.Cookie{
 		Name:     RefreshTokenCookieName,
 		Value:    token,

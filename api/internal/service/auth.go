@@ -14,6 +14,7 @@ import (
 const (
 	EventLogin    string = "login"
 	EventRegister string = "register"
+	EventLogout   string = "logout"
 	EventEmail    string = "email"
 )
 
@@ -22,6 +23,7 @@ type AuthService interface {
 	Register(http.ResponseWriter, *http.Request) error
 	Login(http.ResponseWriter, *http.Request) error
 	Refresh(http.ResponseWriter, *http.Request) error
+	Logout(http.ResponseWriter, *http.Request) error
 	RequestEmailVerification(http.ResponseWriter, *http.Request) error
 }
 
@@ -193,6 +195,26 @@ func (s *authService) Refresh(w http.ResponseWriter, r *http.Request) error {
 		CreatedAt:        user.CreatedAt,
 		WithRefreshToken: false,
 	})
+}
+
+func (s *authService) Logout(w http.ResponseWriter, r *http.Request) error {
+	username, err := util.VerifyRefreshToken(r)
+	if err != nil {
+		return err
+	}
+
+	s.eventRepo.Save(
+		EventLogout,
+		&struct {
+			ActorUser  string `json:"actor_user"`
+			TargetUser string `json:"target_user"`
+		}{
+			ActorUser:  username,
+			TargetUser: username,
+		},
+	)
+
+	return util.RespondLogout(w)
 }
 
 func (s *authService) RequestEmailVerification(w http.ResponseWriter, r *http.Request) error {
