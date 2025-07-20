@@ -52,9 +52,13 @@ document.getElementById('btn-login').addEventListener('click', (event) => {
   const password = document.getElementById('password').value;
 
   if (Api.login.isPending) return;
+  event.target.classList.add('loading');
   Api.login(app, username, password)
     .then(() => redirectAfterLogin())
-    .catch((error) => alert(`登录失败: ${error}`));
+    .catch((error) => {
+      event.target.classList.remove('loading');
+      alert(`登录失败: ${error}`);
+    });
 });
 
 document.getElementById('btn-register').addEventListener('click', (event) => {
@@ -66,9 +70,13 @@ document.getElementById('btn-register').addEventListener('click', (event) => {
   const verifyCode = document.getElementById('r-verify-code').value;
 
   if (Api.register.isPending) return;
+  event.target.classList.add('loading');
   Api.register(app, email, username, password, verifyCode)
     .then(() => redirectAfterLogin())
-    .catch((error) => alert(`注册失败: ${error}`));
+    .catch((error) => {
+      event.target.classList.remove('loading');
+      alert(`注册失败: ${error}`);
+    });
 });
 
 document
@@ -78,7 +86,14 @@ document
     const email = document.getElementById('r-email').value;
 
     if (Api.requestVerifyCode.isPending) return;
+    event.target.classList.add('loading');
     Api.requestVerifyCode(email)
-      .then(() => alert('验证码已发送到您的邮箱'))
-      .catch((error) => alert(`发送验证码失败: ${error}`));
+      .then(() => {
+        event.target.classList.remove('loading');
+        alert('验证码已发送到您的邮箱');
+      })
+      .catch((error) => {
+        event.target.classList.remove('loading');
+        alert(`发送验证码失败: ${error}`);
+      });
   });

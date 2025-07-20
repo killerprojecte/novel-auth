@@ -166,3 +166,32 @@ body::before {
   -ms-user-select: none;
   user-select: none;
 }
+
+.loading {
+  position: relative;
+  color: transparent !important;
+
+  &:after {
+    content: "";
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    animation: loading-dot-flashing 1.5s infinite ease alternate;
+  }
+}
+
+@keyframes loading-dot-flashing {
+  0% {
+    box-shadow: 16px 0 rgba(255, 255, 255, 0.3), -16px 0 rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  100% {
+    box-shadow: 16px 0 rgba(255, 255, 255, 0.7), -16px 0 rgba(255, 255, 255, 0.7);
+    background: rgba(255, 255, 255, 0.7);
+  }
+}
