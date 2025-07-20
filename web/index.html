@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>登录 | 轻小说机翻机器人</title>
+    <link rel="stylesheet" href="/src/style.css" />
+    <script src="https://unpkg.com/just-validate@3.8.1/dist/just-validate.production.min.js"></script>
+  </head>
+
+  <body>
+    <div class="container">
+      <img
+        class="logo unselectable"
+        src="https://n.novelia.cc/files-extra/girl.6e4fe22c238737fd028247f8f0cfd4ee.webp"
+        alt="Girl"
+      />
+
+      <div class="tab">
+        <button id="tab-login" class="tablinks active">登录</button>
+        <button id="tab-register" class="tablinks">注册</button>
+      </div>
+
+      <form id="form-login" class="form active" action="" novalidate>
+        <div class="input-field">
+          <input
+            id="username"
+            class="input"
+            required
+            type="text"
+            name="text"
+            autocomplete="off"
+          />
+          <label for="username" class="unselectable">用户名/邮箱</label>
+        </div>
+        <div class="input-field">
+          <input
+            id="password"
+            class="input"
+            required
+            type="password"
+            name="text"
+            autocomplete="off"
+          />
+          <label for="password" class="unselectable">密码</label>
+        </div>
+
+        <button id="btn-login" class="btn">登录</button>
+      </form>
+
+      <form id="form-register" class="form" action="">
+        <div class="input-field">
+          <input
+            id="r-username"
+            class="input"
+            required
+            type="text"
+            name="text"
+            autocomplete="off"
+          />
+          <label for="r-username" class="unselectable">用户名</label>
+        </div>
+        <div class="input-field">
+          <input
+            id="r-password"
+            class="input"
+            required
+            type="password"
+            name="text"
+            autocomplete="off"
+          />
+          <label for="r-password" class="unselectable">密码</label>
+        </div>
+        <div class="input-field">
+          <input
+            id="r-email"
+            class="input"
+            required
+            type="text"
+            name="email"
+            autocomplete="off"
+          />
+          <label for="r-email" class="unselectable">邮箱</label>
+        </div>
+
+        <div style="display: flex">
+          <div class="input-field">
+            <input
+              id="r-verify-code"
+              class="input"
+              required
+              type="text"
+              name="text"
+              autocomplete="off"
+              style="
+                border-right: none;
+                border-top-right-radius: 0px;
+                border-bottom-right-radius: 0px;
+              "
+            />
+            <label for="r-verify-code" class="unselectable">邮箱验证码</label>
+          </div>
+          <button
+            class="btn"
+            type="button"
+            style="
+              width: 120px;
+              border-top-left-radius: 0px;
+              border-bottom-left-radius: 0px;
+            "
+            id="btn-send-verify-code"
+          >
+            <i class="fas fa-paper-plane"></i>发送验证码
+          </button>
+        </div>
+        <div class="hint unselectable" style="margin-top: -16px">
+          * 收不到验证邮件的话，记得看垃圾箱
+        </div>
+
+        <button id="btn-register" class="btn">注册</button>
+      </form>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
