@@ -1,10 +1,10 @@
-FROM golang:1.24.4-alpine3.21
-WORKDIR /app
-COPY go.mod .
-COPY go.sum .
-RUN go mod download
+FROM golang:1.24.5-alpine3.22 AS builder
+WORKDIR /api
 COPY . .
-ENV GOCACHE=/root/.cache/go-build
-RUN --mount=type=cache,target="/root/.cache/go-build" go build -o server
+RUN go build -o api-server
+
+FROM alpine:3.22.1
+COPY --from=builder /api/api-server /api/api-server
+WORKDIR /app
 EXPOSE 3000
-CMD ["./server"]
+CMD ["./api-server"]
