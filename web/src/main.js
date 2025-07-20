@@ -1,8 +1,10 @@
-const tabButtons = document.getElementsByClassName('tablinks');
-const formLogin = document.getElementById('form-login');
-const formRegister = document.getElementById('form-register');
+import { Api } from './api';
 
-function openForm(evt, formId) {
+function showForm(evt, formId) {
+  const tabButtons = document.getElementsByClassName('tablinks');
+  const formLogin = document.getElementById('form-login');
+  const formRegister = document.getElementById('form-register');
+
   Array.from(tabButtons).forEach((btn) => btn.classList.remove('active'));
   evt.currentTarget.classList.add('active');
   if (formId == 'login') {
@@ -16,16 +18,20 @@ function openForm(evt, formId) {
 
 document
   .getElementById('tab-login')
-  .addEventListener('click', (event) => openForm(event, 'login'));
+  .addEventListener('click', (event) => showForm(event, 'login'));
 
 document
   .getElementById('tab-register')
-  .addEventListener('click', (event) => openForm(event, 'register'));
+  .addEventListener('click', (event) => showForm(event, 'register'));
+
+function getQueryParam(paramName, defaultValue) {
+  const params = new URLSearchParams(window.location.href);
+  return params.get(paramName) || defaultValue;
+}
 
 function redirectAfterLogin() {
   const defaultRedirect = '/';
-  const urlParams = new URLSearchParams(window.location.search);
-  const redirectUrl = urlParams.get('redirect') || defaultRedirect;
+  const redirectUrl = getQueryParam('redirect', defaultRedirect);
   try {
     const finalUrl = new URL(redirectUrl, window.location.origin);
     if (finalUrl.origin === window.location.origin) {
@@ -41,16 +47,28 @@ function redirectAfterLogin() {
 
 document.getElementById('btn-login').addEventListener('click', (event) => {
   event.preventDefault();
+  const app = getQueryParam('from', '');
   const username = document.getElementById('username').value;
   const password = document.getElementById('password').value;
-  redirectAfterLogin();
+
+  if (Api.login.isPending) return;
+  Api.login(app, username, password)
+    .then(() => redirectAfterLogin())
+    .catch((error) => alert(`登录失败: ${error}`));
 });
 
 document.getElementById('btn-register').addEventListener('click', (event) => {
   event.preventDefault();
+  const app = getQueryParam('from', '');
   const username = document.getElementById('r-username').value;
   const password = document.getElementById('r-password').value;
-  redirectAfterLogin();
+  const email = document.getElementById('r-email').value;
+  const verifyCode = document.getElementById('r-verify-code').value;
+
+  if (Api.register.isPending) return;
+  Api.register(app, email, username, password, verifyCode)
+    .then(() => redirectAfterLogin())
+    .catch((error) => alert(`注册失败: ${error}`));
 });
 
 document
@@ -58,4 +76,9 @@ document
   .addEventListener('click', (event) => {
     event.preventDefault();
     const email = document.getElementById('r-email').value;
+
+    if (Api.requestVerifyCode.isPending) return;
+    Api.requestVerifyCode(email)
+      .then(() => alert('验证码已发送到您的邮箱'))
+      .catch((error) => alert(`发送验证码失败: ${error}`));
   });
