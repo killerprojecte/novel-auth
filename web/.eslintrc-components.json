@@ -1,0 +1,11 @@
+{
+    "globals": {
+        "Button": true,
+        "FormItem": true,
+        "Input": true,
+        "Tabs": true,
+        "FormLogin": true,
+        "FormRegister": true,
+        "FormResetPassword": true
+    }
+}

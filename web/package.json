@@ -1,15 +1,29 @@
 {
-  "name": "my-vue-app",
+  "name": "auth-web",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.app.json && tsc -p tsconfig.node.json"
   },
   "dependencies": {
+    "@sveltejs/vite-plugin-svelte": "^6.0.0",
+    "@tailwindcss/vite": "^4.1.11",
+    "@tsconfig/svelte": "^5.0.4",
+    "svelte": "^5.35.5",
+    "svelte-check": "^4.2.2",
+    "tailwindcss": "^4.1.11",
+    "typescript": "~5.8.3",
     "vite": "^7.0.4",
     "vite-plugin-singlefile": "^2.3.0"
+  },
+  "devDependencies": {
+    "prettier": "^3.6.2",
+    "prettier-plugin-svelte": "^3.4.0",
+    "prettier-plugin-tailwindcss": "^0.6.14",
+    "unplugin-svelte-components": "^0.3.1"
   }
 }
