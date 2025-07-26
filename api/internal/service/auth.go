@@ -13,10 +13,11 @@ import (
 )
 
 const (
-	EventLogin    string = "login"
-	EventRegister string = "register"
-	EventLogout   string = "logout"
-	EventOtp      string = "otp"
+	EventLogin         string = "login"
+	EventRegister      string = "register"
+	EventLogout        string = "logout"
+	EventOtp           string = "otp"
+	EventResetPassword string = "reset_password"
 )
 
 type AuthService interface {
@@ -26,6 +27,7 @@ type AuthService interface {
 	Refresh(http.ResponseWriter, *http.Request) error
 	Logout(http.ResponseWriter, *http.Request) error
 	RequestOtp(http.ResponseWriter, *http.Request) error
+	ResetPassword(http.ResponseWriter, *http.Request) error
 }
 
 type authService struct {
@@ -55,6 +57,7 @@ func (s *authService) Use(router chi.Router) {
 	router.Post("/login", util.EH(s.Login))
 	router.Post("/refresh", util.EH(s.Refresh))
 	router.Post("/otp/request", util.EH(s.RequestOtp))
+	router.Post("/password/reset", util.EH(s.ResetPassword))
 }
 
 func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
@@ -313,4 +316,50 @@ func (s *authService) RequestOtp(w http.ResponseWriter, r *http.Request) error {
 	)
 
 	return util.RespondText(w, "验证邮件已发送")
+}
+
+func (s *authService) ResetPassword(w http.ResponseWriter, r *http.Request) error {
+	req, err := util.Body[struct {
+		Email    string `json:"email" validate:"required,email"`
+		Otp      string `json:"otp" validate:"required,numeric,len=6"`
+		Password string `json:"password" validate:"required,min=8,max=100"`
+	}](r)
+	if err != nil {
+		return err
+	}
+
+	user, err := s.userRepo.FindByEmail(req.Email)
+	if err != nil {
+		return util.InternalServerError("查询用户失败")
+	}
+	if user == nil {
+		return util.NotFound("用户不存在")
+	}
+
+	if !s.otpRepo.CheckOtp(repository.OtpResetPassword, req.Email, req.Otp) {
+		return util.Unauthorized("无效的验证码")
+	}
+
+	newHashedPassword, err := util.GenerateHash(req.Password)
+	if err != nil {
+		return util.InternalServerError("密码哈希失败")
+	}
+	user.Password = newHashedPassword
+	err = s.userRepo.UpdateHashedPassword(user)
+	if err != nil {
+		return util.InternalServerError("密码重置失败")
+	}
+
+	s.eventRepo.Save(
+		EventResetPassword,
+		&struct {
+			ActorUser  string `json:"actor_user"`
+			TargetUser string `json:"target_user"`
+		}{
+			ActorUser:  user.Username,
+			TargetUser: user.Username,
+		},
+	)
+
+	return util.RespondText(w, "密码重置成功")
 }
