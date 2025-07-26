@@ -48,30 +48,40 @@ function debounce<T extends (...args: any[]) => Promise<any>>(func: T) {
   return newFunc;
 }
 
+type OtpType = "verify" | "reset_password";
+
 export const Api = {
-  register: debounce((app, username, password, email, otp) =>
-    post("register", {
-      app,
-      username,
-      password,
-      email,
-      otp,
-    }),
+  register: debounce(
+    (
+      app: string,
+      username: string,
+      password: string,
+      email: string,
+      otp: string,
+    ) =>
+      post("register", {
+        app,
+        username,
+        password,
+        email,
+        otp,
+      }),
   ),
-  login: debounce((app, username, password) =>
+  login: debounce((app: string, username: string, password: string) =>
     post("login", {
       app,
       username,
       password,
     }),
   ),
-  requestOtp: debounce((email) =>
-    post("request-otp", {
+  requestOtp: debounce((email: string, type: OtpType) =>
+    post("otp/request", {
       email,
+      type,
     }),
   ),
-  resetPassword: debounce((email, password, otp) =>
-    post("reset-password", {
+  resetPassword: debounce((email: string, password: string, otp: string) =>
+    post("password/reset", {
       email,
       otp,
       password,

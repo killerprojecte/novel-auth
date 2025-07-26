@@ -24,7 +24,7 @@
     event.preventDefault();
 
     if (Api.requestOtp.isPending) return;
-    Api.requestOtp(email)
+    Api.requestOtp(email, "reset_password")
       .then(() => {
         alert("验证码已发送到您的邮箱");
       })
