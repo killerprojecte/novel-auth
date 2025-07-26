@@ -130,11 +130,17 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 	var user *repository.User
 	if strings.Contains(req.Username, "@") {
 		user, err = s.userRepo.FindByEmail(req.Username)
+		if err != nil {
+			return util.InternalServerError("查询用户失败")
+		}
 	}
-	if err != nil {
+	if user == nil {
 		user, err = s.userRepo.FindByUsername(req.Username)
+		if err != nil {
+			return util.InternalServerError("查询用户失败")
+		}
 	}
-	if err != nil {
+	if user == nil {
 		return util.NotFound("用户不存在")
 	}
 
