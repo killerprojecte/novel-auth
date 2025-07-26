@@ -57,13 +57,13 @@ func main() {
 	// repository
 	userRepo := repository.NewUserRepository(db)
 	eventRepo := repository.NewEventRepository(db)
-	codeRepo := repository.NewCodeRepository(rdb)
+	otpRepo := repository.NewOtpRepository(rdb)
 
 	// service
 	authService := service.NewAuthService(
 		userRepo,
 		eventRepo,
-		codeRepo,
+		otpRepo,
 		email,
 	)
 	adminService := service.NewAdminService(

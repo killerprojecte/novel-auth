@@ -4,6 +4,7 @@ import (
 	"auth/internal/infra"
 	"auth/internal/repository"
 	"auth/internal/util"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -15,7 +16,7 @@ const (
 	EventLogin    string = "login"
 	EventRegister string = "register"
 	EventLogout   string = "logout"
-	EventEmail    string = "email"
+	EventOtp      string = "otp"
 )
 
 type AuthService interface {
@@ -24,26 +25,26 @@ type AuthService interface {
 	Login(http.ResponseWriter, *http.Request) error
 	Refresh(http.ResponseWriter, *http.Request) error
 	Logout(http.ResponseWriter, *http.Request) error
-	RequestEmailVerification(http.ResponseWriter, *http.Request) error
+	RequestOtp(http.ResponseWriter, *http.Request) error
 }
 
 type authService struct {
 	userRepo  repository.UserRepository
 	eventRepo repository.EventRepository
-	codeRepo  repository.CodeRepository
+	otpRepo   repository.OtpRepository
 	email     infra.EmailClient
 }
 
 func NewAuthService(
 	userRepo repository.UserRepository,
 	eventRepo repository.EventRepository,
-	codeRepo repository.CodeRepository,
+	otpRepo repository.OtpRepository,
 	email infra.EmailClient,
 ) AuthService {
 	s := &authService{
 		userRepo:  userRepo,
 		eventRepo: eventRepo,
-		codeRepo:  codeRepo,
+		otpRepo:   otpRepo,
 		email:     email,
 	}
 	return s
@@ -53,16 +54,16 @@ func (s *authService) Use(router chi.Router) {
 	router.Post("/register", util.EH(s.Register))
 	router.Post("/login", util.EH(s.Login))
 	router.Post("/refresh", util.EH(s.Refresh))
-	router.Post("/email/verify/request", util.EH(s.RequestEmailVerification))
+	router.Post("/otp/request", util.EH(s.RequestOtp))
 }
 
 func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 	req, err := util.Body[struct {
-		App        string `json:"app" validate:"required"`
-		Email      string `json:"email" validate:"required,email"`
-		Username   string `json:"username" validate:"required,min=2,max=16"`
-		Password   string `json:"password" validate:"required,min=8,max=100"`
-		VerifyCode string `json:"verify_code" validate:"required,numeric,len=6"`
+		App      string `json:"app" validate:"required"`
+		Email    string `json:"email" validate:"required,email"`
+		Username string `json:"username" validate:"required,min=2,max=16"`
+		Password string `json:"password" validate:"required,min=8,max=100"`
+		Otp      string `json:"otp" validate:"required,numeric,len=6"`
 	}](r)
 	if err != nil {
 		return err
@@ -73,7 +74,7 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 	if err := util.ValidPassword(req.Password); err != nil {
 		return err
 	}
-	if !s.codeRepo.CheckEmailVerifyCode(req.Email, req.VerifyCode) {
+	if !s.otpRepo.CheckOtp(repository.OtpVerify, req.Email, req.Otp) {
 		return util.BadRequest("无效验证码")
 	}
 
@@ -217,40 +218,89 @@ func (s *authService) Logout(w http.ResponseWriter, r *http.Request) error {
 	return util.RespondLogout(w)
 }
 
-func (s *authService) RequestEmailVerification(w http.ResponseWriter, r *http.Request) error {
+func (s *authService) sendOtpEmail(otpType string, email string, otp string) error {
+	switch otpType {
+	case repository.OtpVerify:
+		return s.email.SendEmail(
+			email,
+			fmt.Sprintf(
+				"%s 轻小说机翻机器人 注册激活码",
+				otp,
+			),
+			fmt.Sprintf(
+				"您的注册激活码为 %s\n"+
+					"激活码将会在15分钟后失效,请尽快完成注册\n"+
+					"这是系统邮件，请勿回复",
+				otp,
+			),
+		)
+	case repository.OtpResetPassword:
+		return s.email.SendEmail(
+			email,
+			fmt.Sprintf(
+				"%s 轻小说机翻机器人 重置密码验证码",
+				otp,
+			),
+			fmt.Sprintf(
+				"您的重置密码验证码为 %s\n"+
+					"验证码将会在15分钟后失效,请尽快完成操作\n"+
+					"这是系统邮件，请勿回复",
+				otp,
+			),
+		)
+	default:
+		return fmt.Errorf("未知的Otp类型: %s", otpType)
+	}
+}
+
+func (s *authService) RequestOtp(w http.ResponseWriter, r *http.Request) error {
 	req, err := util.Body[struct {
 		Email string `json:"email" validate:"required,email"`
+		Type  string `json:"type" validate:"required,oneof=verify reset_password"`
 	}](r)
 	if err != nil {
 		return err
 	}
 
 	user, err := s.userRepo.FindByEmail(req.Email)
-	if err == nil {
+	if err != nil {
 		return util.InternalServerError("邮件检查失败")
 	}
-	if user != nil {
-		return util.Conflict("邮箱已经被使用")
+
+	// 根据不同类型进行不同的验证
+	switch req.Type {
+	case repository.OtpVerify:
+		if user != nil {
+			return util.Conflict("邮箱已经被使用")
+		}
+	case repository.OtpResetPassword:
+		if user == nil {
+			return util.NotFound("用户不存在")
+		}
+	default:
+		return util.BadRequest("无效的请求类型")
 	}
 
-	code, err := s.codeRepo.SetEmailVerifyCode(req.Email)
+	otp, err := s.otpRepo.SetOtp(req.Type, req.Email)
 	if err != nil {
 		return util.InternalServerError("创建验证码失败")
 	}
 
-	err = s.email.SendVerifyEmail(req.Email, code)
+	err = s.sendOtpEmail(req.Type, req.Email, otp)
 	if err != nil {
 		return util.InternalServerError("发送验证邮件失败")
 	}
 
 	s.eventRepo.Save(
-		EventEmail,
+		EventOtp,
 		&struct {
 			Email string `json:"email"`
+			Type  string `json:"type"`
 		}{
 			Email: req.Email,
+			Type:  req.Type,
 		},
 	)
 
-	return util.RespondJson(w, "验证邮件已发送")
+	return util.RespondText(w, "验证邮件已发送")
 }

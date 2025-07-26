@@ -7,18 +7,18 @@ import (
 )
 
 type reqRegister struct {
-	Email      string `json:"email"`
-	Username   string `json:"username"`
-	Password   string `json:"password"`
-	VerifyCode string `json:"verify_code"`
+	Email    string `json:"email"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Otp      string `json:"otp"`
 }
 
 func TestAuthRegisterBadRequestCases(t *testing.T) {
 	baseReq := reqRegister{
-		Email:      "test@example.com",
-		Username:   "validUser",
-		Password:   "ValidPass123!",
-		VerifyCode: "123456",
+		Email:    "test@example.com",
+		Username: "validUser",
+		Password: "ValidPass123!",
+		Otp:      "123456",
 	}
 	cases := []struct {
 		name    string
@@ -57,7 +57,7 @@ func TestAuthRegisterBadRequestCases(t *testing.T) {
 		},
 		{
 			name:    "ShortVerifyCode",
-			modify:  func(r *reqRegister) { r.VerifyCode = "123" },
+			modify:  func(r *reqRegister) { r.Otp = "123" },
 			message: "验证码长度必须为6位",
 		},
 		{
@@ -71,13 +71,13 @@ func TestAuthRegisterBadRequestCases(t *testing.T) {
 			message: "密码不能超过100个字符",
 		},
 		{
-			name:    "InvalidVerifyCode",
-			modify:  func(r *reqRegister) { r.VerifyCode = "abcdef" },
+			name:    "InvalidVerifyOtp",
+			modify:  func(r *reqRegister) { r.Otp = "abcdef" },
 			message: "验证码必须是数字",
 		},
 		{
-			name:    "ShortVerifyCode",
-			modify:  func(r *reqRegister) { r.VerifyCode = "123" },
+			name:    "ShortVerifyOtp",
+			modify:  func(r *reqRegister) { r.Otp = "123" },
 			message: "验证码长度必须为6位",
 		},
 	}

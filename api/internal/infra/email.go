@@ -1,7 +1,6 @@
 package infra
 
 import (
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -9,7 +8,7 @@ import (
 )
 
 type EmailClient interface {
-	SendVerifyEmail(email string, code string) error
+	SendEmail(to string, title string, content string) error
 }
 
 type emailClient struct {
@@ -26,28 +25,12 @@ func NewEmailClient(domain string, apiKey string) EmailClient {
 	}
 }
 
-func (c *emailClient) SendVerifyEmail(email string, code string) error {
-	return c.sendEmail(
-		email,
-		fmt.Sprintf(
-			"%s 轻小说机翻机器人 注册激活码",
-			code,
-		),
-		fmt.Sprintf(
-			"您的注册激活码为 %s\n"+
-				"激活码将会在15分钟后失效,请尽快完成注册\n"+
-				"这是系统邮件，请勿回复",
-			code,
-		),
-	)
-}
-
-func (c *emailClient) sendEmail(to string, subject string, text string) error {
+func (c *emailClient) SendEmail(to string, title string, content string) error {
 	formData := url.Values{
 		"from":    {"轻小说机翻机器人 <postmaster@" + c.domain + ">"},
 		"to":      {to},
-		"subject": {subject},
-		"text":    {text},
+		"subject": {title},
+		"text":    {content},
 	}
 	body := strings.NewReader(formData.Encode())
 

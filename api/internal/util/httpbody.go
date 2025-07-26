@@ -44,7 +44,7 @@ func Body[T any](r *http.Request) (T, error) {
 				fieldName = "用户名"
 			case "Password":
 				fieldName = "密码"
-			case "VerifyCode":
+			case "Otp":
 				fieldName = "验证码"
 			}
 
