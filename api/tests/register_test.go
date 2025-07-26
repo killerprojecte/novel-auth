@@ -7,17 +7,17 @@ import (
 )
 
 type reqRegister struct {
-	Email    string `json:"email"`
 	Username string `json:"username"`
 	Password string `json:"password"`
+	Email    string `json:"email"`
 	Otp      string `json:"otp"`
 }
 
 func TestAuthRegisterBadRequestCases(t *testing.T) {
 	baseReq := reqRegister{
-		Email:    "test@example.com",
 		Username: "validUser",
 		Password: "ValidPass123!",
+		Email:    "test@example.com",
 		Otp:      "123456",
 	}
 	cases := []struct {

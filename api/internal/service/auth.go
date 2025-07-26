@@ -60,9 +60,9 @@ func (s *authService) Use(router chi.Router) {
 func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 	req, err := util.Body[struct {
 		App      string `json:"app" validate:"required"`
-		Email    string `json:"email" validate:"required,email"`
 		Username string `json:"username" validate:"required,min=2,max=16"`
 		Password string `json:"password" validate:"required,min=8,max=100"`
+		Email    string `json:"email" validate:"required,email"`
 		Otp      string `json:"otp" validate:"required,numeric,len=6"`
 	}](r)
 	if err != nil {
@@ -100,9 +100,11 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 	s.eventRepo.Save(
 		EventRegister,
 		&struct {
+			App        string `json:"app"`
 			ActorUser  string `json:"actor_user"`
 			TargetUser string `json:"target_user"`
 		}{
+			App:        req.App,
 			ActorUser:  user.Username,
 			TargetUser: user.Username,
 		},
@@ -162,9 +164,11 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 	s.eventRepo.Save(
 		EventLogin,
 		&struct {
+			App        string `json:"app"`
 			ActorUser  string `json:"actor_user"`
 			TargetUser string `json:"target_user"`
 		}{
+			App:        req.App,
 			ActorUser:  user.Username,
 			TargetUser: user.Username,
 		},
