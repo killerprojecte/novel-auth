@@ -1,9 +1,12 @@
 <script lang="ts">
+  import { Toaster } from "svelte-french-toast";
+
   let type: string = $state("登录");
   let app = "webx";
 </script>
 
 <main>
+  <Toaster />
   <div
     class="fixed inset-0 overflow-y-auto
       bg-[url('https://books.fishhawk.top/assets/banner-BtpB_r33.webp')]"

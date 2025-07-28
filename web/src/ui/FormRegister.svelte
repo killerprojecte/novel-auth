@@ -1,4 +1,5 @@
 <script lang="ts">
+  import toast from "svelte-french-toast";
   import { Api, redirectAfterLogin } from "../data/api";
   import { Validator } from "./util";
 
@@ -19,7 +20,7 @@
       .then(() => redirectAfterLogin())
       .catch((error) => {
         loading = false;
-        alert(`注册失败: ${error}`);
+        toast.error(`注册失败: ${error}`);
       });
   }
 
@@ -29,10 +30,10 @@
     if (Api.requestOtp.isPending) return;
     Api.requestOtp(email, "verify")
       .then(() => {
-        alert("验证码已发送到您的邮箱");
+        toast.success("验证码已发送到您的邮箱");
       })
       .catch((error) => {
-        alert(`发送验证码失败: ${error}`);
+        toast.error(`发送验证码失败: ${error}`);
       });
   }
 </script>

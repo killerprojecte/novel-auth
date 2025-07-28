@@ -1,4 +1,5 @@
 <script lang="ts">
+  import toast from "svelte-french-toast";
   import { Api, redirectAfterLogin } from "../data/api";
 
   let { app, openResetPasswordForm } = $props();
@@ -16,7 +17,7 @@
       .then(() => redirectAfterLogin())
       .catch((error) => {
         loading = false;
-        alert(`登录失败: ${error}`);
+        toast.error(`登录失败: ${error}`);
       });
   }
 </script>
