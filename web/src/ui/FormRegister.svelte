@@ -1,6 +1,6 @@
 <script lang="ts">
   import toast from "svelte-french-toast";
-  import { Api, redirectAfterLogin } from "../data/api";
+  import { Api, onLoginSuccess } from "../data/api";
   import { Validator } from "./util";
 
   let { app } = $props();
@@ -17,7 +17,7 @@
     if (Api.register.isPending) return;
     loading = true;
     Api.register(app, email, username, password, otp)
-      .then(() => redirectAfterLogin())
+      .then(() => onLoginSuccess())
       .catch((error) => {
         loading = false;
         toast.error(`注册失败: ${error}`);

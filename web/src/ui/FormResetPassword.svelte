@@ -1,6 +1,6 @@
 <script lang="ts">
   import toast from "svelte-french-toast";
-  import { Api, redirectAfterLogin } from "../data/api";
+  import { Api, onLoginSuccess } from "../data/api";
   import { Validator } from "./util";
   import OtpButton from "./OtpButton.svelte";
 
@@ -15,7 +15,7 @@
     if (Api.resetPassword.isPending) return;
     loading = true;
     Api.resetPassword(email, password, otp)
-      .then(() => redirectAfterLogin())
+      .then(() => onLoginSuccess())
       .catch((error) => {
         loading = false;
         toast.error(`重置密码失败: ${error}`);

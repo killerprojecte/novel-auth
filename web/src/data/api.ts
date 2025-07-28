@@ -89,23 +89,14 @@ export const Api = {
   ),
 };
 
-function getQueryParam(paramName: string, defaultValue: string) {
-  const params = new URLSearchParams(window.location.href);
-  return params.get(paramName) || defaultValue;
-}
-
-export function redirectAfterLogin() {
-  const defaultRedirect = "/";
-  const redirectUrl = getQueryParam("redirect", defaultRedirect);
-  try {
-    const finalUrl = new URL(redirectUrl, window.location.origin);
-    if (finalUrl.origin === window.location.origin) {
-      window.location.href =
-        finalUrl.pathname + finalUrl.search + finalUrl.hash;
-    } else {
-      window.location.href = defaultRedirect;
-    }
-  } catch (e) {
-    window.location.href = defaultRedirect;
+export function onLoginSuccess() {
+  if (window.opener) {
+    window.opener.postMessage(
+      {
+        type: "login_success",
+      },
+      "*",
+    );
+    window.close();
   }
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
   import toast from "svelte-french-toast";
-  import { Api, redirectAfterLogin } from "../data/api";
+  import { Api, onLoginSuccess } from "../data/api";
 
   let { app, openResetPasswordForm } = $props();
 
@@ -14,7 +14,7 @@
     if (Api.login.isPending) return;
     loading = true;
     Api.login(app, username, password)
-      .then(() => redirectAfterLogin())
+      .then(() => onLoginSuccess())
       .catch((error) => {
         loading = false;
         toast.error(`登录失败: ${error}`);
