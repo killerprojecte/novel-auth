@@ -23,19 +23,6 @@
         toast.error(`注册失败: ${error}`);
       });
   }
-
-  function requestOtp(event: MouseEvent) {
-    event.preventDefault();
-
-    if (Api.requestOtp.isPending) return;
-    Api.requestOtp(email, "verify")
-      .then(() => {
-        toast.success("验证码已发送到您的邮箱");
-      })
-      .catch((error) => {
-        toast.error(`发送验证码失败: ${error}`);
-      });
-  }
 </script>
 
 <form class="flex w-auto flex-col gap-2" novalidate>
@@ -53,12 +40,7 @@
 
   <FormItem rules={Validator.validateOtp}>
     <Input round="left" placeholder="邮箱验证码" bind:value={otp} />
-    <Button
-      text="发送验证码"
-      round="right"
-      onclick={requestOtp}
-      class="flex-1/2"
-    />
+    <OtpButton {email} type="verify" round="right" class="flex-1/2" />
   </FormItem>
 
   <p class="mt-1 text-left text-xs text-[#8d8d8d] select-none">

@@ -15,7 +15,8 @@
   class={[
     "bg-primary h-12 w-full cursor-pointer border-0",
     "text-base font-medium text-white transition-all duration-200",
-    "ease-in-out outline-none active:bg-[#0c7a43]",
+    "active:bg-primary ease-in-out outline-none",
+    "disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500",
     { loading: loading },
     roundClass(round),
     className,
@@ -36,7 +37,7 @@
       top: 50%;
       transform: translate(-50%, -50%);
       border-radius: 50%;
-      animation: loading-dot-flashing 1.0s infinite ease alternate;
+      animation: loading-dot-flashing 1s infinite ease alternate;
     }
   }
 

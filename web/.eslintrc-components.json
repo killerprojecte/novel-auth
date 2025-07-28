@@ -6,6 +6,7 @@
         "Tabs": true,
         "FormLogin": true,
         "FormRegister": true,
-        "FormResetPassword": true
+        "FormResetPassword": true,
+        "OtpButton": true
     }
 }

@@ -7,6 +7,7 @@ declare global {
     const FormRegister: typeof import("./ui/FormRegister.svelte")["default"]
     const FormResetPassword: typeof import("./ui/FormResetPassword.svelte")["default"]
     const Input: typeof import("./components/Input.svelte")["default"]
+    const OtpButton: typeof import("./ui/OtpButton.svelte")["default"]
     const Tabs: typeof import("./components/Tabs.svelte")["default"]
 }
 

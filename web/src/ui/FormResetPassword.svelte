@@ -2,6 +2,7 @@
   import toast from "svelte-french-toast";
   import { Api, redirectAfterLogin } from "../data/api";
   import { Validator } from "./util";
+  import OtpButton from "./OtpButton.svelte";
 
   let password = $state("");
   let email = $state("");
@@ -20,19 +21,6 @@
         toast.error(`重置密码失败: ${error}`);
       });
   }
-
-  function requestOtp(event: MouseEvent) {
-    event.preventDefault();
-
-    if (Api.requestOtp.isPending) return;
-    Api.requestOtp(email, "reset_password")
-      .then(() => {
-        toast.success("验证码已发送到您的邮箱");
-      })
-      .catch((error) => {
-        toast.error(`发送验证码失败: ${error}`);
-      });
-  }
 </script>
 
 <form class="flex w-auto flex-col gap-2" novalidate>
@@ -42,12 +30,7 @@
 
   <FormItem rules={Validator.validateOtp}>
     <Input round="left" placeholder="邮箱验证码" bind:value={otp} />
-    <Button
-      text="发送验证码"
-      round="right"
-      onclick={requestOtp}
-      class="flex-1/2"
-    />
+    <OtpButton {email} type="reset_password" round="right" class="flex-1/2" />
   </FormItem>
 
   <FormItem rules={Validator.validatePassword}>
