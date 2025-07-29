@@ -14,7 +14,10 @@
     if (Api.login.isPending) return;
     loading = true;
     Api.login(app, username, password)
-      .then(() => onLoginSuccess())
+      .then(() => {
+        loading = false;
+        onLoginSuccess();
+      })
       .catch((error) => {
         loading = false;
         toast.error(`登录失败: ${error}`);
@@ -35,5 +38,5 @@
     onclick={openResetPasswordForm}>忘记密码？</button
   >
 
-  <Button text="登录" onclick={login} />
+  <Button {loading} text="登录" onclick={login} />
 </form>

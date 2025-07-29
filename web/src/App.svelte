@@ -31,7 +31,7 @@
       {:else if type === "注册"}
         <FormRegister {app} />
       {:else}
-        <FormResetPassword />
+        <FormResetPassword openLoginForm={() => (type = "登录")} />
       {/if}
     </div>
   </div>

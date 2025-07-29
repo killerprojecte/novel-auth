@@ -6,6 +6,13 @@ import { viteSingleFile } from "vite-plugin-singlefile";
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "*",
+      "Access-Control-Allow-Headers": "Content-Type",
+    },
+  },
   plugins: [
     tailwindcss(),
     svelte(),

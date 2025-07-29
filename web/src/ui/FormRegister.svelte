@@ -17,7 +17,10 @@
     if (Api.register.isPending) return;
     loading = true;
     Api.register(app, email, username, password, otp)
-      .then(() => onLoginSuccess())
+      .then(() => {
+        loading = false;
+        onLoginSuccess();
+      })
       .catch((error) => {
         loading = false;
         toast.error(`注册失败: ${error}`);
@@ -38,7 +41,7 @@
     <Input placeholder="邮箱" bind:value={email} />
   </FormItem>
 
-  <FormItem rules={Validator.validateOtp}>
+  <FormItem rules={Validator.validateOtpVerify}>
     <Input round="left" placeholder="邮箱验证码" bind:value={otp} />
     <OtpButton {email} type="verify" round="right" class="flex-1/2" />
   </FormItem>

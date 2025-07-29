@@ -1,8 +1,10 @@
 <script lang="ts">
   import toast from "svelte-french-toast";
-  import { Api, onLoginSuccess } from "../data/api";
+  import { Api } from "../data/api";
   import { Validator } from "./util";
   import OtpButton from "./OtpButton.svelte";
+
+  let { openLoginForm } = $props();
 
   let password = $state("");
   let email = $state("");
@@ -15,7 +17,11 @@
     if (Api.resetPassword.isPending) return;
     loading = true;
     Api.resetPassword(email, password, otp)
-      .then(() => onLoginSuccess())
+      .then(() => {
+        loading = false;
+        toast.success(`重置密码成功`);
+        openLoginForm();
+      })
       .catch((error) => {
         loading = false;
         toast.error(`重置密码失败: ${error}`);
@@ -28,7 +34,7 @@
     <Input placeholder="邮箱" bind:value={email} />
   </FormItem>
 
-  <FormItem rules={Validator.validateOtp}>
+  <FormItem rules={Validator.validateOtpResetPassword}>
     <Input round="left" placeholder="邮箱验证码" bind:value={otp} />
     <OtpButton {email} type="reset_password" round="right" class="flex-1/2" />
   </FormItem>
