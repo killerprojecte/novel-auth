@@ -74,6 +74,7 @@ func main() {
 	// router
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
+	router.Use(middleware.Recoverer)
 
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)

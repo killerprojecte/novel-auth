@@ -121,10 +121,12 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 			App        string `json:"app"`
 			ActorUser  string `json:"actor_user"`
 			TargetUser string `json:"target_user"`
+			Ip         string `json:"ip"`
 		}{
 			App:        req.App,
 			ActorUser:  user.Username,
 			TargetUser: user.Username,
+			Ip:         util.GetRealIp(r),
 		},
 	)
 
@@ -185,10 +187,12 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 			App        string `json:"app"`
 			ActorUser  string `json:"actor_user"`
 			TargetUser string `json:"target_user"`
+			Ip         string `json:"ip"`
 		}{
 			App:        req.App,
 			ActorUser:  user.Username,
 			TargetUser: user.Username,
+			Ip:         util.GetRealIp(r),
 		},
 	)
 	return util.RespondAuthTokens(w, util.TokenOptions{
@@ -237,9 +241,11 @@ func (s *authService) Logout(w http.ResponseWriter, r *http.Request) error {
 		&struct {
 			ActorUser  string `json:"actor_user"`
 			TargetUser string `json:"target_user"`
+			Ip         string `json:"ip"`
 		}{
 			ActorUser:  username,
 			TargetUser: username,
+			Ip:         util.GetRealIp(r),
 		},
 	)
 
@@ -324,9 +330,11 @@ func (s *authService) RequestOtp(w http.ResponseWriter, r *http.Request) error {
 		&struct {
 			Email string `json:"email"`
 			Type  string `json:"type"`
+			Ip    string `json:"ip"`
 		}{
 			Email: req.Email,
 			Type:  req.Type,
+			Ip:    util.GetRealIp(r),
 		},
 	)
 
@@ -370,9 +378,11 @@ func (s *authService) ResetPassword(w http.ResponseWriter, r *http.Request) erro
 		&struct {
 			ActorUser  string `json:"actor_user"`
 			TargetUser string `json:"target_user"`
+			Ip         string `json:"ip"`
 		}{
 			ActorUser:  user.Username,
 			TargetUser: user.Username,
+			Ip:         util.GetRealIp(r),
 		},
 	)
 

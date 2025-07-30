@@ -15,3 +15,15 @@ func RateLimiter(limit int) func(next http.Handler) http.Handler {
 		}),
 	)
 }
+
+func GetRealIp(r *http.Request) string {
+	if ip := r.Header.Get("True-Client-IP"); ip != "" {
+		return ip
+	} else if ip := r.Header.Get("X-Real-Ip"); ip != "" {
+		return ip
+	} else if ip := r.Header.Get("X-Forwarded-For"); ip != "" {
+		return ip
+	} else {
+		return r.RemoteAddr
+	}
+}
