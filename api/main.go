@@ -5,6 +5,7 @@ import (
 	"auth/internal/repository"
 	"auth/internal/service"
 	"auth/internal/util"
+	"log/slog"
 	"net/http"
 	"os"
 	"strconv"
@@ -31,6 +32,9 @@ func envInt(key string, fallback int) int {
 }
 
 func main() {
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	slog.SetDefault(logger)
+
 	// util
 	util.RefreshTokenSecret = env("REFRESH_TOKEN_SECRET", "secret")
 	util.AccessTokenSecret = env("ACCESS_TOKEN_SECRET", "secret")
@@ -78,7 +82,7 @@ func main() {
 
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
+		w.Write([]byte("OK\n"))
 	})
 	router.Route("/v1", func(router chi.Router) {
 		router.Route("/auth", authService.Use)

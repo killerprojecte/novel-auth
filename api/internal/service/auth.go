@@ -5,6 +5,7 @@ import (
 	"auth/internal/repository"
 	"auth/internal/util"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -84,20 +85,25 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 		Otp      string `json:"otp" validate:"required,numeric,len=6"`
 	}](r)
 	if err != nil {
+		slog.Error("Register request body parse error", "error", err)
 		return err
 	}
 	if err := util.ValidUsername(req.Username); err != nil {
+		slog.Error("Invalid username", "username", req.Username, "error", err)
 		return err
 	}
 	if err := util.ValidPassword(req.Password); err != nil {
+		slog.Error("Invalid password", "error", err)
 		return err
 	}
 	if !s.otpRepo.CheckOtp(repository.OtpVerify, req.Email, req.Otp) {
+		slog.Error("Invalid OTP", "email", req.Email, "otp", req.Otp)
 		return util.BadRequest("无效验证码")
 	}
 
 	hashedPassword, err := util.GenerateHash(req.Password)
 	if err != nil {
+		slog.Error("Password hash error", "error", err)
 		return util.InternalServerError("密码哈希失败")
 	}
 
@@ -112,6 +118,7 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 	}
 	err = s.userRepo.Save(user)
 	if err != nil {
+		slog.Error("User save error", "error", err)
 		return util.InternalServerError("用户保存失败")
 	}
 
@@ -146,6 +153,7 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 		Password string `json:"password" validate:"required"`
 	}](r)
 	if err != nil {
+		slog.Error("Login request body parse error", "error", err)
 		return err
 	}
 
@@ -153,21 +161,25 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 	if strings.Contains(req.Username, "@") {
 		user, err = s.userRepo.FindByEmail(req.Username)
 		if err != nil {
+			slog.Error("User lookup by email failed", "email", req.Username, "error", err)
 			return util.InternalServerError("查询用户失败")
 		}
 	}
 	if user == nil {
 		user, err = s.userRepo.FindByUsername(req.Username)
 		if err != nil {
+			slog.Error("User lookup by username failed", "username", req.Username, "error", err)
 			return util.InternalServerError("查询用户失败")
 		}
 	}
 	if user == nil {
+		slog.Error("User not found", "username", req.Username)
 		return util.NotFound("用户不存在")
 	}
 
 	v, err := util.ValidateHash(user.Password, req.Password)
 	if !v.Valid || err != nil {
+		slog.Error("Password validation failed", "username", user.Username, "error", err)
 		return util.Unauthorized("密码错误")
 	}
 	if v.Obsolete {
@@ -175,6 +187,8 @@ func (s *authService) Login(w http.ResponseWriter, r *http.Request) error {
 		if err == nil {
 			user.Password = newHashedPassword
 			s.userRepo.UpdateHashedPassword(user)
+		} else {
+			slog.Warn("Failed to update password hash", "username", user.Username, "error", err)
 		}
 	}
 
@@ -212,9 +226,11 @@ func (s *authService) Refresh(w http.ResponseWriter, r *http.Request) error {
 
 	user, err := s.userRepo.FindByUsername(username)
 	if err != nil {
+		slog.Error("User lookup failed", "username", username, "error", err)
 		return err
 	}
 	if user == nil {
+		slog.Error("User not found", "username", username)
 		return util.NotFound("用户不存在")
 	}
 
@@ -233,6 +249,7 @@ func (s *authService) Refresh(w http.ResponseWriter, r *http.Request) error {
 func (s *authService) Logout(w http.ResponseWriter, r *http.Request) error {
 	username, err := util.VerifyRefreshToken(r)
 	if err != nil {
+		slog.Error("Failed to verify refresh token", "error", err)
 		return err
 	}
 
@@ -293,11 +310,13 @@ func (s *authService) RequestOtp(w http.ResponseWriter, r *http.Request) error {
 		Type  string `json:"type" validate:"required,oneof=verify reset_password"`
 	}](r)
 	if err != nil {
+		slog.Error("Request OTP body parse error", "error", err)
 		return err
 	}
 
 	user, err := s.userRepo.FindByEmail(req.Email)
 	if err != nil {
+		slog.Error("User lookup failed", "email", req.Email, "error", err)
 		return util.InternalServerError("邮件检查失败")
 	}
 
@@ -305,23 +324,28 @@ func (s *authService) RequestOtp(w http.ResponseWriter, r *http.Request) error {
 	switch req.Type {
 	case repository.OtpVerify:
 		if user != nil {
+			slog.Error("Email already in use", "email", req.Email)
 			return util.Conflict("邮箱已经被使用")
 		}
 	case repository.OtpResetPassword:
 		if user == nil {
+			slog.Error("User not found", "email", req.Email)
 			return util.NotFound("用户不存在")
 		}
 	default:
+		slog.Error("Invalid OTP request type", "type", req.Type)
 		return util.BadRequest("无效的请求类型")
 	}
 
 	otp, err := s.otpRepo.SetOtp(req.Type, req.Email)
 	if err != nil {
+		slog.Error("Failed to create OTP", "email", req.Email, "error", err)
 		return util.InternalServerError("创建验证码失败")
 	}
 
 	err = s.sendOtpEmail(req.Type, req.Email, otp)
 	if err != nil {
+		slog.Error("Failed to send OTP email", "email", req.Email, "error", err)
 		return util.InternalServerError("发送验证邮件失败")
 	}
 
@@ -348,28 +372,34 @@ func (s *authService) ResetPassword(w http.ResponseWriter, r *http.Request) erro
 		Password string `json:"password" validate:"required,min=8,max=100"`
 	}](r)
 	if err != nil {
+		slog.Error("Request body parse error", "error", err)
 		return err
 	}
 
 	user, err := s.userRepo.FindByEmail(req.Email)
 	if err != nil {
+		slog.Error("User lookup failed", "email", req.Email, "error", err)
 		return util.InternalServerError("查询用户失败")
 	}
 	if user == nil {
+		slog.Error("User not found", "email", req.Email)
 		return util.NotFound("用户不存在")
 	}
 
 	if !s.otpRepo.CheckOtp(repository.OtpResetPassword, req.Email, req.Otp) {
+		slog.Error("Invalid OTP", "email", req.Email)
 		return util.Unauthorized("无效的验证码")
 	}
 
 	newHashedPassword, err := util.GenerateHash(req.Password)
 	if err != nil {
+		slog.Error("Failed to hash password", "email", req.Email, "error", err)
 		return util.InternalServerError("密码哈希失败")
 	}
 	user.Password = newHashedPassword
 	err = s.userRepo.UpdateHashedPassword(user)
 	if err != nil {
+		slog.Error("Failed to update password", "email", req.Email, "error", err)
 		return util.InternalServerError("密码重置失败")
 	}
 
