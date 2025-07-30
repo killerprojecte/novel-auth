@@ -13,7 +13,6 @@ import (
 
 type AuthEvent struct {
 	ID        int64 `sql:"primary_key"`
-	UserID    *int64
 	Action    string
 	Detail    string
 	CreatedAt time.Time

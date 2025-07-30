@@ -14,7 +14,8 @@ import (
 type Event = model.AuthEvent
 
 type EventFilter struct {
-	UserID        *int64
+	ActorUser     *string
+	TargetUser    *string
 	Action        *string
 	CreatedAfter  *time.Time
 	CreatedBefore *time.Time
@@ -39,8 +40,13 @@ func (r *eventRepository) List(filter EventFilter, pageNumber, pageSize int64) (
 	stmt := SELECT(AuthEvent.AllColumns).
 		FROM(AuthEvent)
 
-	if filter.UserID != nil {
-		stmt = stmt.WHERE(AuthEvent.UserID.EQ(Int64(*filter.UserID)))
+	if filter.ActorUser != nil {
+		stmt = stmt.WHERE(RawBool("detail ->> 'actor_user' = $user",
+			map[string]interface{}{"$user": *filter.ActorUser}))
+	}
+	if filter.TargetUser != nil {
+		stmt = stmt.WHERE(RawBool("detail ->> 'target_user' = $user",
+			map[string]interface{}{"$user": *filter.TargetUser}))
 	}
 	if filter.Action != nil {
 		stmt = stmt.WHERE(AuthEvent.Action.EQ(String(*filter.Action)))
