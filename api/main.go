@@ -80,7 +80,7 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte("OK"))
 	})
-	router.Route("/api/v1", func(router chi.Router) {
+	router.Route("/v1", func(router chi.Router) {
 		router.Route("/auth", authService.Use)
 		router.Route("/admin", adminService.Use)
 	})
