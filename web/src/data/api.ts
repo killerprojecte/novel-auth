@@ -95,5 +95,7 @@ export function onLoginSuccess() {
       "*",
     );
     window.close();
+  } else {
+    window.location.href = "https://n.novelia.cc";
   }
 }
