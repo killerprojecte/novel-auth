@@ -1,5 +1,5 @@
 <script lang="ts">
-  import toast from "svelte-french-toast";
+  import { toast } from "svelte-sonner";
   import { Api } from "../data/api";
   import { Validator } from "./util";
   import OtpButton from "./OtpButton.svelte";

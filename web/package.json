@@ -15,16 +15,16 @@
     "@tsconfig/svelte": "^5.0.4",
     "svelte": "^5.35.5",
     "svelte-check": "^4.2.2",
-    "svelte-french-toast": "^1.2.0",
+    "svelte-sonner": "^1.0.5",
     "tailwindcss": "^4.1.11",
     "typescript": "~5.8.3",
+    "unplugin-svelte-components": "^0.3.1",
     "vite": "^7.0.4",
     "vite-plugin-singlefile": "^2.3.0"
   },
   "devDependencies": {
     "prettier": "^3.6.2",
     "prettier-plugin-svelte": "^3.4.0",
-    "prettier-plugin-tailwindcss": "^0.6.14",
-    "unplugin-svelte-components": "^0.3.1"
+    "prettier-plugin-tailwindcss": "^0.6.14"
   }
 }

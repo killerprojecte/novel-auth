@@ -2,9 +2,6 @@ async function post(url: string, body: any) {
   const controller = new AbortController();
   const signal = controller.signal;
 
-  // const delay = () => new Promise((resolve) => setTimeout(resolve, 5000));
-  // await delay(); // 延迟1秒，模拟网络延迟
-
   // 设置5秒超时
   const timeoutId = setTimeout(() => controller.abort(), 5000);
 

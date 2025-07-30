@@ -23,15 +23,18 @@ importers:
       svelte-check:
         specifier: ^4.2.2
         version: 4.3.0(picomatch@4.0.3)(svelte@5.36.13)(typescript@5.8.3)
-      svelte-french-toast:
-        specifier: ^1.2.0
-        version: 1.2.0(svelte@5.36.13)
+      svelte-sonner:
+        specifier: ^1.0.5
+        version: 1.0.5(svelte@5.36.13)
       tailwindcss:
         specifier: ^4.1.11
         version: 4.1.11
       typescript:
         specifier: ~5.8.3
         version: 5.8.3
+      unplugin-svelte-components:
+        specifier: ^0.3.1
+        version: 0.3.1(rollup@4.45.1)
       vite:
         specifier: ^7.0.4
         version: 7.0.5(jiti@2.4.2)(lightningcss@1.30.1)
@@ -48,9 +51,6 @@ importers:
       prettier-plugin-tailwindcss:
         specifier: ^0.6.14
         version: 0.6.14(prettier-plugin-svelte@3.4.0(prettier@3.6.2)(svelte@5.36.13))(prettier@3.6.2)
-      unplugin-svelte-components:
-        specifier: ^0.3.1
-        version: 0.3.1(rollup@4.45.1)
 
 packages:
 
@@ -852,6 +852,11 @@ packages:
   run-parallel@1.2.0:
     resolution: {integrity: sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA==}
 
+  runed@0.28.0:
+    resolution: {integrity: sha512-k2xx7RuO9hWcdd9f+8JoBeqWtYrm5CALfgpkg2YDB80ds/QE4w0qqu34A7fqiAwiBBSBQOid7TLxwxVC27ymWQ==}
+    peerDependencies:
+      svelte: ^5.7.0
+
   sade@1.8.1:
     resolution: {integrity: sha512-xal3CZX1Xlo/k4ApwCFrHVACi9fBqJ7V+mwhBsuf/1IOKbBy098Fex+Wa/5QMubw09pSZ/u8EY8PWgevJsXp1A==}
     engines: {node: '>=6'}
@@ -872,15 +877,10 @@ packages:
       svelte: ^4.0.0 || ^5.0.0-next.0
       typescript: '>=5.0.0'
 
-  svelte-french-toast@1.2.0:
-    resolution: {integrity: sha512-5PW+6RFX3xQPbR44CngYAP1Sd9oCq9P2FOox4FZffzJuZI2mHOB7q5gJBVnOiLF5y3moVGZ7u2bYt7+yPAgcEQ==}
+  svelte-sonner@1.0.5:
+    resolution: {integrity: sha512-9dpGPFqKb/QWudYqGnEz93vuY+NgCEvyNvxoCLMVGw6sDN/3oVeKV1xiEirW2E1N3vJEyj5imSBNOGltQHA7mg==}
     peerDependencies:
-      svelte: ^3.57.0 || ^4.0.0
-
-  svelte-writable-derived@3.1.1:
-    resolution: {integrity: sha512-w4LR6/bYZEuCs7SGr+M54oipk/UQKtiMadyOhW0PTwAtJ/Ai12QS77sLngEcfBx2q4H8ZBQucc9ktSA5sUGZWw==}
-    peerDependencies:
-      svelte: ^3.2.1 || ^4.0.0-next.1 || ^5.0.0-next.94
+      svelte: ^5.0.0
 
   svelte@5.36.13:
     resolution: {integrity: sha512-LnSywHHQM/nJekC65d84T1Yo85IeCYN4AryWYPhTokSvcEAFdYFCfbMhX1mc0zHizT736QQj0nalUk+SXaWrEQ==}
@@ -1572,6 +1572,11 @@ snapshots:
     dependencies:
       queue-microtask: 1.2.3
 
+  runed@0.28.0(svelte@5.36.13):
+    dependencies:
+      esm-env: 1.2.2
+      svelte: 5.36.13
+
   sade@1.8.1:
     dependencies:
       mri: 1.2.0
@@ -1592,13 +1597,9 @@ snapshots:
     transitivePeerDependencies:
       - picomatch
 
-  svelte-french-toast@1.2.0(svelte@5.36.13):
+  svelte-sonner@1.0.5(svelte@5.36.13):
     dependencies:
-      svelte: 5.36.13
-      svelte-writable-derived: 3.1.1(svelte@5.36.13)
-
-  svelte-writable-derived@3.1.1(svelte@5.36.13):
-    dependencies:
+      runed: 0.28.0(svelte@5.36.13)
       svelte: 5.36.13
 
   svelte@5.36.13:
