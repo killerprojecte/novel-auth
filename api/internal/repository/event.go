@@ -8,6 +8,7 @@ import (
 	"time"
 
 	. "github.com/go-jet/jet/v2/postgres"
+	"github.com/go-jet/jet/v2/qrm"
 )
 
 type Event = model.AuthEvent
@@ -58,7 +59,9 @@ func (r *eventRepository) List(filter EventFilter, pageNumber, pageSize int64) (
 
 	var dest []*Event
 	err := stmt.Query(r.db, &dest)
-	if err != nil {
+	if err == qrm.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
 	return dest, nil

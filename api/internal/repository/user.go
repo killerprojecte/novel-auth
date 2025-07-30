@@ -7,6 +7,7 @@ import (
 	"time"
 
 	. "github.com/go-jet/jet/v2/postgres"
+	"github.com/go-jet/jet/v2/qrm"
 )
 
 const (
@@ -67,7 +68,9 @@ func (r *userRepository) List(filter UserFilter, pageNumber int64, pageSize int6
 
 	var dest []*User
 	err := stmt.Query(r.db, &dest)
-	if err != nil {
+	if err == qrm.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
 	return dest, nil
@@ -80,7 +83,9 @@ func (r *userRepository) FindByUsername(username string) (*User, error) {
 
 	var dest User
 	err := stmt.Query(r.db, &dest)
-	if err != nil {
+	if err == qrm.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
 	return &dest, nil
@@ -93,7 +98,9 @@ func (r *userRepository) FindByEmail(email string) (*User, error) {
 
 	var dest User
 	err := stmt.Query(r.db, &dest)
-	if err != nil {
+	if err == qrm.ErrNoRows {
+		return nil, nil
+	} else if err != nil {
 		return nil, err
 	}
 	return &dest, nil
