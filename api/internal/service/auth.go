@@ -53,11 +53,26 @@ func NewAuthService(
 }
 
 func (s *authService) Use(router chi.Router) {
-	router.Post("/register", util.EH(s.Register))
-	router.Post("/login", util.EH(s.Login))
-	router.Post("/refresh", util.EH(s.Refresh))
-	router.Post("/otp/request", util.EH(s.RequestOtp))
-	router.Post("/password/reset", util.EH(s.ResetPassword))
+	router.Group(func(router chi.Router) {
+		router.Use(util.RateLimiter(10))
+		router.Post("/register", util.EH(s.Register))
+	})
+	router.Group(func(router chi.Router) {
+		router.Use(util.RateLimiter(20))
+		router.Post("/login", util.EH(s.Login))
+	})
+	router.Group(func(router chi.Router) {
+		router.Use(util.RateLimiter(5))
+		router.Post("/otp/request", util.EH(s.RequestOtp))
+	})
+	router.Group(func(router chi.Router) {
+		router.Use(util.RateLimiter(100))
+		router.Post("/refresh", util.EH(s.Refresh))
+	})
+	router.Group(func(router chi.Router) {
+		router.Use(util.RateLimiter(5))
+		router.Post("/password/reset", util.EH(s.ResetPassword))
+	})
 }
 
 func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
