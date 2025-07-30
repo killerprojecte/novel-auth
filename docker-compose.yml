@@ -12,13 +12,20 @@ services:
 
   api:
     image: ghcr.io/auto-novel/auth-api:latest
+    depends_on:
+      postgresql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     restart: unless-stopped
     environment:
       - REFRESH_TOKEN_SECRET
       - ACCESS_TOKEN_SECRET
       - DB_HOST=postgresql
-      - DB_PASSWORD=POSTGRES_PASSWORD
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
       - RDB_HOST=redis
+      - MAILGUN_DOMAIN
+      - MAILGUN_APIKEY
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:3000/health || exit 1"]
       interval: 30s
@@ -35,7 +42,7 @@ services:
       - POSTGRES_DB=auth
     volumes:
       - ./data/postgresql:/var/lib/postgresql/data
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
       interval: 30s

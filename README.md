@@ -7,5 +7,16 @@
 ## 部署 (WIP)
 
 ```bash
-echo "POSTGRES_PASSWORD=$(pwgen -s 40 1)" >> .env
+echo "REFRESH_TOKEN_SECRET=$(pwgen -s 64 1)" >> .env
+echo "ACCESS_TOKEN_SECRET=$(pwgen -s 64 1)" >> .env
+echo "POSTGRES_PASSWORD=$(pwgen -s 64 1)" >> .env
+echo "MAILGUN_DOMAIN=verify.fishhawk.top" >> .env
+echo "MAILGUN_APIKEY=" >> .env
+```
+
+## 开发
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.debug.yml up -d
+docker compose -f docker-compose.yml -f docker-compose.debug.yml up -d --build # 重新构建镜像
 ```
