@@ -34,7 +34,7 @@ func (c *emailClient) SendEmail(to string, title string, content string) error {
 	}
 	body := strings.NewReader(formData.Encode())
 
-	apiUrl := "https://api.en.mailgun.net/v3/" + c.domain + "/messages"
+	apiUrl := "https://api.eu.mailgun.net/v3/" + c.domain + "/messages"
 	req, err := http.NewRequest(http.MethodPost, apiUrl, body)
 	if err != nil {
 		return err
