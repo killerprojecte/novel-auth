@@ -275,7 +275,7 @@ func (s *authService) sendOtpEmail(otpType string, email string, otp string) err
 		return s.email.SendEmail(
 			email,
 			fmt.Sprintf(
-				"%s 轻小说机翻机器人 注册激活码",
+				"%s 注册激活码",
 				otp,
 			),
 			fmt.Sprintf(
@@ -288,10 +288,7 @@ func (s *authService) sendOtpEmail(otpType string, email string, otp string) err
 	case repository.OtpResetPassword:
 		return s.email.SendEmail(
 			email,
-			fmt.Sprintf(
-				"%s 轻小说机翻机器人 重置密码验证码",
-				otp,
-			),
+			"重置密码验证码",
 			fmt.Sprintf(
 				"您的重置密码验证码为 %s\n"+
 					"验证码将会在15分钟后失效,请尽快完成操作\n"+

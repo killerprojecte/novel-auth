@@ -1,10 +1,11 @@
 package infra
 
 import (
-	"net/http"
-	"net/url"
-	"strings"
+	"context"
+	"log/slog"
 	"time"
+
+	"github.com/mailgun/mailgun-go/v5"
 )
 
 type EmailClient interface {
@@ -12,47 +13,30 @@ type EmailClient interface {
 }
 
 type emailClient struct {
+	mg     *mailgun.Client
 	domain string
-	apiKey string
-	client http.Client
 }
 
 func NewEmailClient(domain string, apiKey string) EmailClient {
+	mg := mailgun.NewMailgun(apiKey)
+	mg.SetAPIBase(mailgun.APIBaseEU)
 	return &emailClient{
+		mg:     mg,
 		domain: domain,
-		apiKey: apiKey,
-		client: http.Client{Timeout: 5 * time.Second},
 	}
 }
 
 func (c *emailClient) SendEmail(to string, title string, content string) error {
-	formData := url.Values{
-		"from":    {"轻小说机翻机器人 <postmaster@" + c.domain + ">"},
-		"to":      {to},
-		"subject": {title},
-		"text":    {content},
-	}
-	body := strings.NewReader(formData.Encode())
+	from := "轻小说机翻机器人 <no-reply@" + c.domain + ">"
+	message := mailgun.NewMessage(c.domain, from, title, content, to)
 
-	apiUrl := "https://api.eu.mailgun.net/v3/" + c.domain + "/messages"
-	req, err := http.NewRequest(http.MethodPost, apiUrl, body)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*10)
+	defer cancel()
+
+	_, err := c.mg.Send(ctx, message)
 	if err != nil {
+		slog.Error("Failed to send email", "error", err)
 		return err
 	}
-
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.SetBasicAuth("api", c.apiKey)
-
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return err
-	} else if resp.StatusCode != http.StatusOK {
-		return &url.Error{
-			Op:  "POST",
-			URL: apiUrl,
-			Err: http.ErrServerClosed,
-		}
-	}
-
 	return nil
 }
