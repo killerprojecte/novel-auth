@@ -9,4 +9,3 @@ services:
     build:
       context: ./api
       dockerfile: Dockerfile.debug
-      no_cache: true

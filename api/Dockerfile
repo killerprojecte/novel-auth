@@ -1,5 +1,7 @@
 FROM golang:1.24.5-alpine3.22 AS builder
 WORKDIR /api
+COPY go.mod go.sum .
+RUN go mod download
 COPY . .
 RUN go build -o api-server
 
