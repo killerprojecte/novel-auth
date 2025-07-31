@@ -7,6 +7,7 @@ import (
 )
 
 type reqRegister struct {
+	App      string `json:"app"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 	Email    string `json:"email"`
@@ -15,8 +16,9 @@ type reqRegister struct {
 
 func TestAuthRegisterBadRequestCases(t *testing.T) {
 	baseReq := reqRegister{
-		Username: "validUser",
-		Password: "ValidPass123!",
+		App:      "App",
+		Username: "User",
+		Password: "Password123!",
 		Email:    "test@example.com",
 		Otp:      "123456",
 	}

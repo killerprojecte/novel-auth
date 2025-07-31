@@ -4,13 +4,24 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"math/rand"
+	"net"
 	"net/http"
 	"testing"
 )
 
-const Url = "http://localhost:3000"
+const Url = "http://localhost"
 
 var Client = http.Client{}
+
+func randomIPv4() net.IP {
+	return net.IPv4(
+		byte(rand.Intn(256)),
+		byte(rand.Intn(256)),
+		byte(rand.Intn(256)),
+		byte(rand.Intn(256)),
+	)
+}
 
 func SendRequestAndExpectError[T any](
 	t *testing.T,
@@ -23,6 +34,7 @@ func SendRequestAndExpectError[T any](
 		t.Fatalf("failed to create request: %v", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Real-Ip", randomIPv4().String())
 
 	resp, err := Client.Do(req)
 	if err != nil {

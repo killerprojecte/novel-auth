@@ -38,6 +38,8 @@ func Body[T any](r *http.Request) (T, error) {
 		validationErrorToMessage := func(ve validator.FieldError) string {
 			fieldName := ve.Field()
 			switch fieldName {
+			case "App":
+				fieldName = "应用名"
 			case "Email":
 				fieldName = "邮箱"
 			case "Username":
@@ -46,6 +48,8 @@ func Body[T any](r *http.Request) (T, error) {
 				fieldName = "密码"
 			case "Otp":
 				fieldName = "验证码"
+			default:
+				fieldName = strings.ToLower(fieldName)
 			}
 
 			switch ve.Tag() {

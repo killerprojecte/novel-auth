@@ -1,8 +1,12 @@
 services:
   web:
+    image: !reset null
     build:
       context: ./web
 
   api:
+    image: !reset null
     build:
       context: ./api
+      dockerfile: Dockerfile.debug
+      no_cache: true
