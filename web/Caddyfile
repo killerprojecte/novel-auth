@@ -1,3 +1,13 @@
+(cors) {
+	@origin{args[0]} header Origin {args[1]}
+	header @origin{args[0]} {
+		Access-Control-Allow-Origin "{args[1]}"
+		Access-Control-Allow-Method *
+		Access-Control-Allow-Credentials "true"
+		Access-Control-Max-Age "3600"
+	}
+}
+
 :80 {
 	encode gzip
 
@@ -16,5 +26,14 @@
 
 	handle_path /api* {
 		reverse_proxy api:3000
+
+		@options {
+			method OPTIONS
+		}
+		respond @options 204
+		import cors 1 https://books.fishhawk.com
+		import cors 2 https://books1.fishhawk.com
+		import cors 3 https://n.novelia.cc
+		import cors 4 http://localhost:5173
 	}
 }
