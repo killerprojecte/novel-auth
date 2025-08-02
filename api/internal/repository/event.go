@@ -80,7 +80,7 @@ func (r *eventRepository) Save(action string, detail interface{}) error {
 		Detail:    string(detailEncoded),
 		CreatedAt: time.Now(),
 	}
-	stmt := AuthEvent.INSERT(AuthUser.MutableColumns).
+	stmt := AuthEvent.INSERT(AuthEvent.MutableColumns).
 		MODEL(event)
 
 	_, err := stmt.Exec(r.db)
