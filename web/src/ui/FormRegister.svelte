@@ -34,7 +34,7 @@
   </FormItem>
 
   <FormItem rules={Validator.validatePassword}>
-    <Input placeholder="密码" bind:value={password} />
+    <Input type="password" placeholder="密码" bind:value={password} />
   </FormItem>
 
   <FormItem rules={Validator.validateEmail}>

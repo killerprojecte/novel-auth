@@ -40,7 +40,7 @@
   </FormItem>
 
   <FormItem rules={Validator.validatePassword}>
-    <Input placeholder="新密码" bind:value={password} />
+    <Input type="password" placeholder="新密码" bind:value={password} />
   </FormItem>
 
   <p class="mt-1 text-left text-xs text-[#8d8d8d] select-none">
