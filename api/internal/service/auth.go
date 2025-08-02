@@ -118,8 +118,16 @@ func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
 	}
 	err = s.userRepo.Save(user)
 	if err != nil {
-		slog.Error("User save error", "error", err)
-		return util.InternalServerError("用户保存失败")
+		if util.IsUniqueConstraintViolation(err, "auth_user_username_key") {
+			slog.Error("Username already exist")
+			return util.Conflict("用户名已被占用")
+		} else if util.IsUniqueConstraintViolation(err, "auth_user_email_key") {
+			slog.Error("Email already exist")
+			return util.Conflict("邮箱已被占用")
+		} else {
+			slog.Error("Failed to save user", "error", err)
+			return util.InternalServerError("创建用户失败")
+		}
 	}
 
 	s.eventRepo.Save(
