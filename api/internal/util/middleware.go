@@ -1,9 +1,11 @@
 package util
 
 import (
+	"log/slog"
 	"net/http"
 	"time"
 
+	"github.com/go-chi/httplog/v3"
 	"github.com/go-chi/httprate"
 )
 
@@ -26,4 +28,18 @@ func GetRealIp(r *http.Request) string {
 	} else {
 		return r.RemoteAddr
 	}
+}
+
+func isDebugHeaderSet(r *http.Request) bool {
+	return r.Header.Get("X-Debug-Log") != "true"
+}
+
+func RequestLogger() func(next http.Handler) http.Handler {
+	return httplog.RequestLogger(slog.Default(), &httplog.Options{
+		Level:           slog.LevelInfo,
+		Schema:          httplog.SchemaECS,
+		RecoverPanics:   true,
+		LogRequestBody:  isDebugHeaderSet,
+		LogResponseBody: isDebugHeaderSet,
+	})
 }
