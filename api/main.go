@@ -77,7 +77,6 @@ func main() {
 
 	// router
 	router := chi.NewRouter()
-	router.Use(util.RequestLogger())
 	router.Use(middleware.Recoverer)
 
 	router.Get("/health", func(w http.ResponseWriter, r *http.Request) {
@@ -85,6 +84,7 @@ func main() {
 		w.Write([]byte("OK\n"))
 	})
 	router.Route("/v1", func(router chi.Router) {
+		router.Use(util.RequestLogger())
 		router.Route("/auth", authService.Use)
 		router.Route("/admin", adminService.Use)
 	})
