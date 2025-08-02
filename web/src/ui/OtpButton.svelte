@@ -21,7 +21,7 @@
     event.preventDefault();
 
     if (Api.requestOtp.isPending || countdown > 0) return;
-    Api.requestOtp(email, type)
+    Api.requestOtp({ email, type })
       .then(() => {
         toast.success("验证码已发送到您的邮箱");
         startCountdown();

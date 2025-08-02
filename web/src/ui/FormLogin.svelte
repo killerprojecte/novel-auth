@@ -13,7 +13,7 @@
 
     if (Api.login.isPending) return;
     loading = true;
-    Api.login(app, username, password)
+    Api.login({ app, username, password })
       .then(() => {
         loading = false;
         onLoginSuccess();

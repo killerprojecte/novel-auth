@@ -49,40 +49,23 @@ type OtpType = "verify" | "reset_password";
 
 export const Api = {
   register: debounce(
-    (
-      app: string,
-      username: string,
-      password: string,
-      email: string,
-      otp: string,
-    ) =>
-      post("register", {
-        app,
-        username,
-        password,
-        email,
-        otp,
-      }),
+    (body: {
+      app: string;
+      username: string;
+      password: string;
+      email: string;
+      otp: string;
+    }) => post("register", body),
   ),
-  login: debounce((app: string, username: string, password: string) =>
-    post("login", {
-      app,
-      username,
-      password,
-    }),
+  login: debounce((body: { app: string; username: string; password: string }) =>
+    post("login", body),
   ),
-  requestOtp: debounce((email: string, type: OtpType) =>
-    post("otp/request", {
-      email,
-      type,
-    }),
+  requestOtp: debounce((body: { email: string; type: OtpType }) =>
+    post("otp/request", body),
   ),
-  resetPassword: debounce((email: string, password: string, otp: string) =>
-    post("password/reset", {
-      email,
-      otp,
-      password,
-    }),
+  resetPassword: debounce(
+    (body: { email: string; password: string; otp: string }) =>
+      post("password/reset", body),
   ),
 };
 

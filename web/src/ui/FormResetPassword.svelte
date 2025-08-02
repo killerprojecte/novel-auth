@@ -16,7 +16,7 @@
 
     if (Api.resetPassword.isPending) return;
     loading = true;
-    Api.resetPassword(email, password, otp)
+    Api.resetPassword({ email, password, otp })
       .then(() => {
         loading = false;
         toast.success(`重置密码成功`);

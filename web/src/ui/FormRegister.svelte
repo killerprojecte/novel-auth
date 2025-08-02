@@ -16,7 +16,7 @@
 
     if (Api.register.isPending) return;
     loading = true;
-    Api.register(app, email, username, password, otp)
+    Api.register({ app, username, password, email, otp })
       .then(() => {
         loading = false;
         onLoginSuccess();
