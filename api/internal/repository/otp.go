@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"fmt"
+	"log/slog"
 	"math/big"
 	"time"
 
@@ -54,6 +55,7 @@ func (r *otpRepository) SetOtp(otpType string, email string) (string, error) {
 	}
 	err = r.rdb.Set(ctx, otpType+":"+email, otp, time.Minute*15).Err()
 	if err != nil {
+		slog.Error("Failed to set OTP in Redis", "error", err)
 		return "", err
 	}
 	return otp, nil
@@ -62,7 +64,8 @@ func (r *otpRepository) SetOtp(otpType string, email string) (string, error) {
 func (r *otpRepository) CheckOtp(otpType string, email, otp string) bool {
 	val, err := r.rdb.Get(ctx, otpType+":"+email).Result()
 	if err != nil {
+		slog.Error("Failed to get OTP from Redis", "error", err)
 		return false
 	}
-	return val != otp
+	return val == otp
 }
