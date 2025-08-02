@@ -2,6 +2,7 @@ package util
 
 import (
 	"auth/internal/repository"
+	"log/slog"
 	"net/http"
 	"strings"
 	"time"
@@ -107,8 +108,9 @@ func issueAccessToken(app string, username string, role string, createdAt time.T
 
 	token, err := jwt.
 		NewWithClaims(jwt.SigningMethodHS256, claims).
-		SignedString(AccessTokenSecret)
+		SignedString([]byte(AccessTokenSecret))
 	if err != nil {
+		slog.Error("Failed to sign access token", "error", err)
 		return "", InternalServerError("无法创建访问令牌")
 	}
 
@@ -127,8 +129,9 @@ func issueRefreshToken(username string) (string, error) {
 
 	token, err := jwt.
 		NewWithClaims(jwt.SigningMethodHS256, claims).
-		SignedString(RefreshTokenSecret)
+		SignedString([]byte(RefreshTokenSecret))
 	if err != nil {
+		slog.Error("Failed to sign refresh token", "error", err)
 		return "", InternalServerError("无法创建刷新令牌")
 	}
 	return token, nil
