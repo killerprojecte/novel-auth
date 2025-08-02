@@ -8,8 +8,11 @@
 
 ```bash
 # 下载项目
-git clone https://github.com/auto-novel/auth.git
+mkdir auth
 cd auth
+mkdir sql
+curl -sSL "https://raw.githubusercontent.com/auto-novel/auth/refs/heads/main/docker-compose.yml" -o "./docker-compose.yml"
+curl -sSL "https://raw.githubusercontent.com/auto-novel/auth/refs/heads/main/sql/init.sql" -o "./sql/init.sql"
 
 # 配置环境变量
 echo "REFRESH_TOKEN_SECRET=$(pwgen -s 64 1)" >> .env
