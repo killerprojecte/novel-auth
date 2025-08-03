@@ -77,7 +77,7 @@ func Body[T any](r *http.Request) (T, error) {
 		for i, ve := range errors {
 			messages[i] = validationErrorToMessage(ve)
 		}
-		return zero, BadRequest(strings.Join(messages, "\n"))
+		return zero, BadRequest(strings.Join(messages, "; "))
 	}
 
 	return result, nil
