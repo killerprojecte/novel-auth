@@ -8,6 +8,7 @@
 <div class="flex justify-center gap-12 border-b border-gray-200">
   {#each tabs as tab}
     <button
+      type="button"
       onclick={() => (activeTab = tab)}
       class={[
         "border-b-2 px-1 py-4 text-base font-medium whitespace-nowrap",

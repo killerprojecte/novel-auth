@@ -3,6 +3,7 @@
 
   let {
     text,
+    type = "button" as const,
     round = "full",
     class: className = "",
     loading = false,
@@ -12,6 +13,7 @@
 
 <button
   {...rest}
+  {type}
   class={[
     "bg-primary h-12 w-full cursor-pointer border-0",
     "text-base font-medium text-white transition-all duration-200",

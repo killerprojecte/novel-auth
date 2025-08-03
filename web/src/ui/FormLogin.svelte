@@ -35,9 +35,10 @@
   </FormItem>
 
   <button
+    type="button"
     class="text-primary cursor-pointer text-right text-sm font-bold"
     onclick={openResetPasswordForm}>忘记密码？</button
   >
 
-  <Button {loading} text="登录" onclick={login} />
+  <Button type="submit" {loading} text="登录" onclick={login} />
 </form>
