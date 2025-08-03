@@ -1,6 +1,7 @@
 <script lang="ts">
   import { toast } from "svelte-sonner";
-  import { Api, onLoginSuccess } from "../data/api";
+  import { Api } from "../data/api";
+  import { onLoginSuccess } from "./util";
 
   let { app, openResetPasswordForm } = $props();
 

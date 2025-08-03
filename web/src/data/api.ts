@@ -68,17 +68,3 @@ export const Api = {
       post("password/reset", body),
   ),
 };
-
-export function onLoginSuccess() {
-  if (window.opener) {
-    window.opener.postMessage(
-      {
-        type: "login_success",
-      },
-      "*",
-    );
-    window.close();
-  } else {
-    window.location.href = "https://n.novelia.cc";
-  }
-}

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { toast } from "svelte-sonner";
-  import { Api, onLoginSuccess } from "../data/api";
-  import { Validator } from "./util";
+  import { Api } from "../data/api";
+  import { Validator, onLoginSuccess } from "./util";
 
   let { app } = $props();
 
