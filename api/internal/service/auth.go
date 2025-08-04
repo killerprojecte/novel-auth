@@ -55,7 +55,7 @@ func NewAuthService(
 
 func (s *authService) Use(router chi.Router) {
 	router.Group(func(router chi.Router) {
-		router.Use(util.RateLimiter(10))
+		router.Use(util.RateLimiter(100))
 		router.Post("/register", util.EH(s.Register))
 	})
 
