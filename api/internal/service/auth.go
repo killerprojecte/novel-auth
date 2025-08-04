@@ -363,7 +363,7 @@ func (s *authService) RequestOtp(w http.ResponseWriter, r *http.Request) error {
 func (s *authService) ResetPassword(w http.ResponseWriter, r *http.Request) error {
 	req, err := util.Body[struct {
 		Email    string `json:"email" validate:"required,email"`
-		Otp      string `json:"otp" validate:"required,len=32"`
+		Otp      string `json:"otp" validate:"required,len=26"`
 		Password string `json:"password" validate:"required,min=8,max=100"`
 	}](r)
 	if err != nil {
