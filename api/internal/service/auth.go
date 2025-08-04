@@ -62,15 +62,8 @@ func (s *authService) Use(router chi.Router) {
 	router.Post("/login", util.EH(s.Login))
 	router.Post("/logout", util.EH(s.Logout))
 	router.Post("/refresh", util.EH(s.Refresh))
-
-	router.Group(func(router chi.Router) {
-		router.Use(util.RateLimiter(5))
-		router.Post("/otp/request", util.EH(s.RequestOtp))
-	})
-	router.Group(func(router chi.Router) {
-		router.Use(util.RateLimiter(5))
-		router.Post("/password/reset", util.EH(s.ResetPassword))
-	})
+	router.Post("/otp/request", util.EH(s.RequestOtp))
+	router.Post("/password/reset", util.EH(s.ResetPassword))
 }
 
 func (s *authService) Register(w http.ResponseWriter, r *http.Request) error {
