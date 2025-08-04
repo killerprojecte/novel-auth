@@ -11,6 +11,17 @@
     />
     <meta name="renderer" content="webkit" />
     <meta name="force-rendering" content="webkit" />
+    <script>
+      window.onerror = function (msg, url, lno, cno) {
+        var div = document.createElement('div');
+        div.innerHTML = `Error: ${lno}:${cno} ${msg
+          .replace('<', '&lt;')
+          .replace('>', '&gt;')} ${url}`;
+        div.style.position = 'fixed';
+        document.body.appendChild(div);
+        return false;
+      };
+    </script>
   </head>
   <body>
     <div id="app"></div>
