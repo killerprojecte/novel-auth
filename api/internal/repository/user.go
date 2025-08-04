@@ -12,6 +12,7 @@ import (
 
 const (
 	RoleAdmin      string = "admin"
+	RoleTrusted    string = "trusted"
 	RoleMember     string = "member"
 	RoleRestricted string = "restricted"
 	RoleBanned     string = "banned"
