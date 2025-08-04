@@ -58,11 +58,8 @@ func (s *authService) Use(router chi.Router) {
 		router.Use(util.RateLimiter(10))
 		router.Post("/register", util.EH(s.Register))
 	})
-	router.Group(func(router chi.Router) {
-		router.Use(util.RateLimiter(20))
-		router.Post("/login", util.EH(s.Login))
-	})
 
+	router.Post("/login", util.EH(s.Login))
 	router.Post("/logout", util.EH(s.Logout))
 	router.Post("/refresh", util.EH(s.Refresh))
 
