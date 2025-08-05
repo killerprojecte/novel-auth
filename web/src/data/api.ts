@@ -6,10 +6,10 @@ async function post(url: string, body: any) {
   const timeoutId = setTimeout(() => controller.abort(), 5000);
 
   try {
-    const response = await fetch("/api/v1/auth/" + url, {
-      method: "POST",
+    const response = await fetch('/api/v1/auth/' + url, {
+      method: 'POST',
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify(body),
       signal,
@@ -17,13 +17,12 @@ async function post(url: string, body: any) {
     clearTimeout(timeoutId);
     if (!response.ok) {
       const message = await response.text();
-      console.log(response.statusText);
       throw `[${response.status}] ${message || response.statusText}`;
     }
     return await response.text();
   } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") {
-      throw "请求超时，请稍后再试";
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw '请求超时，请稍后再试';
     }
     throw `${error}`;
   }
@@ -45,7 +44,7 @@ function debounce<T extends (...args: any[]) => Promise<any>>(func: T) {
   return newFunc;
 }
 
-type OtpType = "verify" | "reset_password";
+export type OtpType = 'verify' | 'reset_password';
 
 export const Api = {
   register: debounce(
@@ -55,16 +54,16 @@ export const Api = {
       password: string;
       email: string;
       otp: string;
-    }) => post("register", body),
+    }) => post('register', body),
   ),
   login: debounce((body: { app: string; username: string; password: string }) =>
-    post("login", body),
+    post('login', body),
   ),
   requestOtp: debounce((body: { email: string; type: OtpType }) =>
-    post("otp/request", body),
+    post('otp/request', body),
   ),
   resetPassword: debounce(
     (body: { email: string; password: string; otp: string }) =>
-      post("password/reset", body),
+      post('password/reset', body),
   ),
 };
