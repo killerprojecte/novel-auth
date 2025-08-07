@@ -3,7 +3,23 @@ import 'vue-sonner/style.css';
 import { Toaster } from 'vue-sonner';
 
 const type = ref('登录');
-const app = new URLSearchParams(window.location.search).get('app') || 'auth';
+
+function getOsTheme() {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light';
+}
+
+const query = new URLSearchParams(window.location.search);
+const app = query.get('app') || 'auth';
+const theme = query.get('theme') || getOsTheme();
+
+const root = window.document.documentElement;
+if (theme === 'dark') {
+  root.classList.add('dark');
+} else {
+  root.classList.remove('dark');
+}
 </script>
 
 <template>
@@ -14,7 +30,7 @@ const app = new URLSearchParams(window.location.search).get('app') || 'auth';
     <div class="absolute inset-0 -z-10 bg-black/80"></div>
 
     <div
-      class="mx-auto flex h-full w-full flex-col gap-4 bg-white px-8 pt-[10vh] pb-8 text-center sm:mt-[10vh] sm:h-auto sm:w-md sm:rounded-2xl sm:p-8"
+      class="bg-background mx-auto flex h-full w-full flex-col gap-4 px-8 pt-[10vh] pb-8 text-center sm:mt-[10vh] sm:h-auto sm:w-md sm:rounded-2xl sm:p-8"
     >
       <img
         class="mx-auto aspect-square w-1/2 max-w-[200px] select-none"
