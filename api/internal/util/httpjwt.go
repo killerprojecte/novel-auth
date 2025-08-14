@@ -17,11 +17,11 @@ var (
 
 const (
 	RefreshTokenCookieName = "refresh-token"
-	RefreshTokenLifetime   = time.Hour * 24 * 90
-	AccessTokenLifetime    = time.Hour * 24
 )
 
-type refreshClaim = jwt.RegisteredClaims
+type refreshClaim struct {
+	jwt.RegisteredClaims
+}
 
 type accessClaim struct {
 	jwt.RegisteredClaims
@@ -63,6 +63,29 @@ func VerifyAccessToken(r *http.Request, requireAdmin bool) (string, error) {
 	return claims.Subject, nil
 }
 
+type TokenPolicy struct {
+	RefreshTokenLifetime time.Duration
+	AccessTokenLifetime  time.Duration
+}
+
+var defaultTokenPolicy = TokenPolicy{
+	RefreshTokenLifetime: time.Hour * 24 * 100,
+	AccessTokenLifetime:  time.Hour * 24 * 7,
+}
+var thirdPartyTokenPolicy = TokenPolicy{
+	RefreshTokenLifetime: 0,
+	AccessTokenLifetime:  time.Hour * 24 * 100,
+}
+
+func getTokenPolicy(app string) TokenPolicy {
+	switch app {
+	case "legado":
+		return thirdPartyTokenPolicy
+	default:
+		return defaultTokenPolicy
+	}
+}
+
 type TokenOptions struct {
 	App              string
 	Username         string
@@ -72,14 +95,16 @@ type TokenOptions struct {
 }
 
 func RespondAuthTokens(w http.ResponseWriter, opts TokenOptions) error {
-	if opts.WithRefreshToken {
-		refreshToken, err := issueRefreshToken(opts.Username)
+	policy := getTokenPolicy(opts.App)
+
+	if opts.WithRefreshToken && policy.RefreshTokenLifetime > 0 {
+		refreshToken, err := issueRefreshToken(opts, policy)
 		if err != nil {
 			return err
 		}
-		attachRefreshToken(w, refreshToken, int(RefreshTokenLifetime.Seconds()-60))
+		attachRefreshToken(w, refreshToken, int(policy.RefreshTokenLifetime.Seconds()))
 	}
-	accessToken, err := issueAccessToken(opts.App, opts.Username, opts.Role, opts.CreatedAt)
+	accessToken, err := issueAccessToken(opts, policy)
 	if err != nil {
 		return err
 	}
@@ -91,28 +116,19 @@ func RespondLogout(w http.ResponseWriter) error {
 	return RespondText(w, "")
 }
 
-func tokenTTLFor(app string) time.Duration {
-	switch app {
-	case "legado":
-		return time.Hour * 24 * 100
-	default:
-		return AccessTokenLifetime
-	}
-}
-
-func issueAccessToken(app string, username string, role string, createdAt time.Time) (string, error) {
+func issueAccessToken(opts TokenOptions, policy TokenPolicy) (string, error) {
 	issuedAt := time.Now()
-	expiresAt := issuedAt.Add(tokenTTLFor(app))
+	expiresAt := issuedAt.Add(policy.AccessTokenLifetime)
 
 	claims := accessClaim{
 		RegisteredClaims: jwt.RegisteredClaims{
-			Subject:   username,
-			Audience:  jwt.ClaimStrings{app},
+			Subject:   opts.Username,
+			Audience:  jwt.ClaimStrings{opts.App},
 			ExpiresAt: jwt.NewNumericDate(expiresAt),
 			IssuedAt:  jwt.NewNumericDate(issuedAt),
 		},
-		Role:      role,
-		CreatedAt: jwt.NewNumericDate(createdAt),
+		Role:      opts.Role,
+		CreatedAt: jwt.NewNumericDate(opts.CreatedAt),
 	}
 
 	token, err := jwt.
@@ -126,14 +142,16 @@ func issueAccessToken(app string, username string, role string, createdAt time.T
 	return token, nil
 }
 
-func issueRefreshToken(username string) (string, error) {
+func issueRefreshToken(opts TokenOptions, policy TokenPolicy) (string, error) {
 	issuedAt := time.Now()
-	expiresAt := issuedAt.Add(RefreshTokenLifetime)
+	expiresAt := issuedAt.Add(policy.RefreshTokenLifetime)
 
 	claims := refreshClaim{
-		Subject:   username,
-		ExpiresAt: jwt.NewNumericDate(expiresAt),
-		IssuedAt:  jwt.NewNumericDate(issuedAt),
+		RegisteredClaims: jwt.RegisteredClaims{
+			Subject:   opts.Username,
+			ExpiresAt: jwt.NewNumericDate(expiresAt),
+			IssuedAt:  jwt.NewNumericDate(issuedAt),
+		},
 	}
 
 	token, err := jwt.
@@ -152,7 +170,7 @@ func attachRefreshToken(w http.ResponseWriter, token string, maxAge int) {
 		Name:     RefreshTokenCookieName,
 		Value:    token,
 		Path:     "/",
-		MaxAge:   int(RefreshTokenLifetime.Seconds() - 60),
+		MaxAge:   maxAge,
 		HttpOnly: true,
 		Secure:   true,
 		SameSite: http.SameSiteStrictMode,
