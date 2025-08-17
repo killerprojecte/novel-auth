@@ -25,7 +25,7 @@
     --color-primary: #63e2b7;
     --color-primary-hover: #7fe7c4;
     --color-primary-pressed: #5acea7;
-    --color-on-primary: #ffffff;
+    --color-on-primary: #000000;
 
     --color-error: #e88080;
     --color-outline: rgba(255, 255, 255, 0.24);
