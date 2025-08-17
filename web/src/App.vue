@@ -25,15 +25,15 @@ if (theme === 'dark') {
 <template>
   <Toaster position="top-center" />
   <div
-    class="fixed inset-0 overflow-y-auto bg-[url('https://books.fishhawk.top/assets/banner-BtpB_r33.webp')]"
+    class="fixed top-0 right-0 bottom-0 left-0 overflow-y-auto bg-[url('https://books.fishhawk.top/assets/banner-BtpB_r33.webp')]"
   >
-    <div class="absolute inset-0 -z-10 bg-black/80"></div>
+    <div class="absolute top-0 right-0 bottom-0 left-0 -z-10 bg-black/80"></div>
 
     <div
-      class="bg-background mx-auto flex h-full w-full flex-col gap-4 px-8 pt-[10vh] pb-8 text-center sm:mt-[10vh] sm:h-auto sm:w-md sm:rounded-2xl sm:p-8"
+      class="bg-background m-auto flex h-full w-full flex-col gap-4 pt-[10vh] pr-8 pb-8 pl-8 sm:mt-[10vh] sm:h-auto sm:w-md sm:rounded-2xl sm:p-8"
     >
       <img
-        class="mx-auto aspect-square w-1/2 max-w-[200px] select-none"
+        class="m-auto mt-0 mb-0 aspect-square w-1/2 max-w-[200px] select-none"
         src="https://n.novelia.cc/files-extra/girl.6e4fe22c238737fd028247f8f0cfd4ee.webp"
         alt=""
       />

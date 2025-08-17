@@ -12,7 +12,7 @@ const inactiveTabClass =
 
 const getTabClass = (tab: string) => {
   return [
-    'border-b-2 px-1 py-4 text-base font-medium whitespace-nowrap',
+    'border-b-2 pl-1 pr-1 pt-4 pb-4 text-base font-medium whitespace-nowrap',
     model.value === tab ? activeTabClass : inactiveTabClass,
   ];
 };
