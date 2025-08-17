@@ -4,22 +4,23 @@ import { Toaster } from 'vue-sonner';
 
 const type = ref('登录');
 
-function getOsTheme() {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light';
-}
-
 const query = new URLSearchParams(window.location.search);
 const app = query.get('app') || 'auth';
-const theme = query.get('theme') || getOsTheme();
+const theme = parseTheme();
+
+function parseTheme() {
+  const theme = query.get('theme');
+  if (theme === 'dark' || theme === 'light') {
+    return theme;
+  } else {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+      ? 'dark'
+      : 'light';
+  }
+}
 
 const root = window.document.documentElement;
-if (theme === 'dark') {
-  root.classList.add('dark');
-} else {
-  root.classList.remove('dark');
-}
+root.classList.toggle('dark', theme === 'dark');
 </script>
 
 <template>
@@ -30,7 +31,7 @@ if (theme === 'dark') {
     <div class="absolute top-0 right-0 bottom-0 left-0 -z-10 bg-black/80"></div>
 
     <div
-      class="bg-background m-auto flex h-full w-full flex-col gap-4 pt-[10vh] pr-8 pb-8 pl-8 sm:mt-[10vh] sm:h-auto sm:w-md sm:rounded-2xl sm:p-8"
+      class="bg-surface m-auto flex h-full w-full flex-col gap-4 pt-[10vh] pr-8 pb-8 pl-8 sm:mt-[10vh] sm:h-auto sm:w-md sm:rounded-2xl sm:p-8"
     >
       <img
         class="m-auto mt-0 mb-0 aspect-square w-1/2 max-w-[200px] select-none"

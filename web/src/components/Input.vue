@@ -17,8 +17,9 @@ const props = withDefaults(defineProps<Props>(), {
 const model = defineModel<string>();
 
 const inputClass = computed(() => [
-  'box-border h-12 w-full border border-[#8d8d8d] pl-4 pr-4 text-base',
-  'focus:border-primary invalid:border-red-600 focus:outline-none invalid:focus:border-red-600',
+  'box-border h-12 w-full pl-4 pr-4 outline-none',
+  'text-base text-on-surface placeholder:text-outline',
+  'border border-outline focus:border-primary invalid:border-error invalid:focus:border-error',
   roundClass(props.round),
   props.class,
 ]);

@@ -15,9 +15,9 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const buttonClass = computed(() => [
-  'bg-primary h-12 w-full cursor-pointer border-0',
-  'text-base font-medium text-white transition-all duration-200',
-  'active:bg-primary ease-in-out outline-none',
+  'h-12 w-full cursor-pointer border-0 ease-in-out outline-none',
+  'text-base font-medium text-on-primary transition-all duration-200',
+  'bg-primary hover:bg-primary-hover active:bg-primary-pressed',
   'disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500',
   { loading: props.loading },
   roundClass(props.round),

@@ -34,7 +34,7 @@ function validate() {
     <div ref="root" class="flex" @input="validate" @blur="validate">
       <slot />
     </div>
-    <div class="text-error mt-1 text-left text-xs text-red-600">
+    <div class="mt-1 text-left text-xs text-error">
       {{ validateError }}
     </div>
   </div>
