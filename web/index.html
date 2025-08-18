@@ -11,19 +11,19 @@
     />
     <meta name="renderer" content="webkit" />
     <meta name="force-rendering" content="webkit" />
+  </head>
+  <body>
+    <div id="fallback-error" style="position: fixed; height: 100vh"></div>
     <script>
-      window.onerror = function (msg, url, lno, cno) {
+      window.onerror = function (msg, url, line, col) {
         var div = document.createElement('div');
-        div.innerHTML = `Error: ${lno}:${cno} ${msg
-          .replace('<', '&lt;')
-          .replace('>', '&gt;')} ${url}`;
-        document.body.appendChild(div);
+        div.innerText = `Error: ${line}:${col} ${msg} ${url}`;
+        document.getElementById('fallback-error').appendChild(div);
         return false;
       };
     </script>
-  </head>
-  <body>
     <div id="app"></div>
     <script type="module" src="/src/main.ts"></script>
+    <noscript>本页面需要浏览器启用JavaScript</noscript>
   </body>
 </html>
