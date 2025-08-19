@@ -14,11 +14,11 @@ import (
 type Event = model.AuthEvent
 
 type EventFilter struct {
-	ActorUser     *string
-	TargetUser    *string
-	Action        *string
-	CreatedAfter  *time.Time
-	CreatedBefore *time.Time
+	ActorUser     string
+	TargetUser    string
+	Action        string
+	CreatedAfter  time.Time
+	CreatedBefore time.Time
 }
 
 type EventRepository interface {
@@ -40,22 +40,22 @@ func (r *eventRepository) List(filter EventFilter, pageNumber, pageSize int64) (
 	stmt := SELECT(AuthEvent.AllColumns).
 		FROM(AuthEvent)
 
-	if filter.ActorUser != nil {
+	if filter.ActorUser != "" {
 		stmt = stmt.WHERE(RawBool("detail ->> 'actor_user' = $user",
-			map[string]interface{}{"$user": *filter.ActorUser}))
+			map[string]interface{}{"$user": filter.ActorUser}))
 	}
-	if filter.TargetUser != nil {
+	if filter.TargetUser != "" {
 		stmt = stmt.WHERE(RawBool("detail ->> 'target_user' = $user",
-			map[string]interface{}{"$user": *filter.TargetUser}))
+			map[string]interface{}{"$user": filter.TargetUser}))
 	}
-	if filter.Action != nil {
-		stmt = stmt.WHERE(AuthEvent.Action.EQ(String(*filter.Action)))
+	if filter.Action != "" {
+		stmt = stmt.WHERE(AuthEvent.Action.EQ(String(filter.Action)))
 	}
-	if filter.CreatedAfter != nil {
-		stmt = stmt.WHERE(AuthEvent.CreatedAt.GT(TimestampzT(*filter.CreatedAfter)))
+	if !filter.CreatedAfter.IsZero() {
+		stmt = stmt.WHERE(AuthEvent.CreatedAt.GT(TimestampzT(filter.CreatedAfter)))
 	}
-	if filter.CreatedBefore != nil {
-		stmt = stmt.WHERE(AuthEvent.CreatedAt.LT(TimestampzT(*filter.CreatedBefore)))
+	if !filter.CreatedBefore.IsZero() {
+		stmt = stmt.WHERE(AuthEvent.CreatedAt.LT(TimestampzT(filter.CreatedBefore)))
 	}
 
 	stmt = stmt.
