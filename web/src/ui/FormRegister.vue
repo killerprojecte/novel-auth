@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { toast } from 'vue-sonner';
 import { Api } from '../data/api';
 import { Validator, onLoginSuccess } from './util';
 
@@ -32,7 +33,7 @@ function register(event: MouseEvent) {
     })
     .catch((error) => {
       loading.value = false;
-      console.error(`注册失败: ${error}`);
+      toast.error(`注册失败: ${error}`);
     });
 }
 </script>
