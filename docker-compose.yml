@@ -1,6 +1,6 @@
 services:
   web:
-    image: ghcr.io/auto-novel/auth-web:latest
+    image: ghcr.io/killerprojecte/novel-auth-web:latest
     ports:
       - 4000:80
     healthcheck:
@@ -11,7 +11,7 @@ services:
       start_period: 20s
 
   api:
-    image: ghcr.io/auto-novel/auth-api:latest
+    image: ghcr.io/killerprojecte/novel-auth-api:latest
     depends_on:
       postgresql:
         condition: service_healthy
@@ -24,8 +24,9 @@ services:
       - DB_HOST=postgresql
       - DB_PASSWORD=${POSTGRES_PASSWORD}
       - RDB_HOST=redis
-      - MAILGUN_DOMAIN
-      - MAILGUN_APIKEY
+      - SMTP_MAIL
+      - SMTP_SERVER
+      - SMTP_PASSWORD
     healthcheck:
       test: ["CMD-SHELL", "wget --spider --tries=1 --no-verbose http://localhost:3000/health || exit 1"]
       interval: 30s
