@@ -54,8 +54,9 @@ func main() {
 		env("RDB_PASSWORD", ""),
 	)
 	email := infra.NewEmailClient(
-		env("MAILGUN_DOMAIN", ""),
-		env("MAILGUN_APIKEY", ""),
+		env("SMTP_MAIL", ""),
+		env("SMTP_SERVER", ""),
+		env("SMTP_PASSWORD", ""),
 	)
 
 	// repository

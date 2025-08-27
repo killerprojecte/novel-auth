@@ -31,9 +31,7 @@
 			method OPTIONS
 		}
 		respond @options 204
-		import cors 1 https://books.fishhawk.top
-		import cors 2 https://books1.fishhawk.top
-		import cors 3 https://n.novelia.cc
-		import cors 4 http://localhost:5173
+		import cors 1 https://books.43.al
+		import cors 2 http://localhost:5173
 	}
 }

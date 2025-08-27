@@ -18,8 +18,9 @@ curl -sSL "https://raw.githubusercontent.com/auto-novel/auth/refs/heads/main/sql
 echo "REFRESH_TOKEN_SECRET=$(pwgen -s 64 1)" >> .env
 echo "ACCESS_TOKEN_SECRET=$(pwgen -s 64 1)" >> .env
 echo "POSTGRES_PASSWORD=$(pwgen -s 64 1)" >> .env
-echo "MAILGUN_DOMAIN=verify.fishhawk.top" >> .env
-echo "MAILGUN_APIKEY=" >> .env
+echo "SMTP_MAIL=no-reply@example.com" >> .env
+echo "SMTP_SERVER=smtp.example.com:465" >> .env
+echo "SMTP_PASSWORD=" >> .env
 
 # 启动服务
 docker compose up -d
